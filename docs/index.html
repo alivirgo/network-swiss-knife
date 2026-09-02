@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Network Swiss Knife (NSK) — Enterprise Networking Suite</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2338bdf8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container nav-content">
+      <div class="logo">
+        <svg class="logo-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span class="logo-text">Network Swiss Knife</span>
+        <span class="badge">v2.5.0</span>
+      </div>
+      <div class="nav-links">
+        <a href="#features">Tools</a>
+        <a href="#topology">Topology</a>
+        <a href="#quickstart">Quick Start</a>
+        <a href="#downloads" class="btn btn-primary btn-sm">Download NSK</a>
+        <a href="https://github.com/alivirgo/shiny-doodle-network-port-scanner" target="_blank" class="btn btn-secondary btn-sm">GitHub</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <header class="hero">
+    <div class="container hero-content">
+      <div class="hero-badge">
+        <span class="pulse-dot"></span>
+        Cross-Platform Diagnostic Suite &bull; Windows, macOS, Linux, Android
+      </div>
+      <h1 class="hero-title">
+        The Complete Networking <br><span class="highlight">Swiss Knife (NSK)</span>
+      </h1>
+      <p class="hero-desc">
+        A high-throughput asynchronous network engine paired with an ultra-clean, modest engineering GUI. From multi-threaded port audits and interactive network topology to client-side VPN detection, bufferbloat speedtests, and Wi-Fi signal inspection.
+      </p>
+
+      <div class="hero-actions" id="downloads">
+        <a href="https://github.com/alivirgo/shiny-doodle-network-port-scanner/releases/latest/download/NSK-2.5.0-Windows.zip" class="btn btn-primary btn-lg">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17l6 5 10-18"/></svg>
+          Download for Windows (.zip)
+        </a>
+        <a href="https://github.com/alivirgo/shiny-doodle-network-port-scanner/releases/latest/download/NSK-2.5.0-macOS-Linux.tar.gz" class="btn btn-secondary btn-lg">
+          Download for macOS & Linux (.tar.gz)
+        </a>
+      </div>
+      <div class="hero-meta">
+        Double-click ready &bull; Zero external runtimes &bull; Free & Open Source (MIT)
+      </div>
+    </div>
+
+    <!-- UI Mockup Preview -->
+    <div class="container preview-wrapper">
+      <div class="app-window">
+        <div class="window-header">
+          <div class="window-dots">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <div class="window-title">NSK 2.5 &mdash; Network Swiss Knife Toolkit</div>
+          <div class="window-status"><span class="live-indicator"></span> ENGINE ONLINE</div>
+        </div>
+        <div class="window-body">
+          <div class="mock-sidebar">
+            <div class="mock-nav-header">CORE SCANNERS</div>
+            <div class="mock-nav-item active">&#9672; Port Scanner</div>
+            <div class="mock-nav-item">&#9672; LAN Host Discovery</div>
+            <div class="mock-nav-item">&#9672; Find VPN Users</div>
+            <div class="mock-nav-header">PING & TELEMETRY</div>
+            <div class="mock-nav-item">&#9672; ISP Ping Monitor</div>
+            <div class="mock-nav-item">&#9672; DNS Benchmark</div>
+            <div class="mock-nav-item">&#9672; Bandwidth Speedtest</div>
+            <div class="mock-nav-item">&#9672; Wi-Fi & Interfaces</div>
+            <div class="mock-nav-header">ANALYZERS</div>
+            <div class="mock-nav-item">&#9672; DNS Swiss Knife</div>
+            <div class="mock-nav-item">&#9672; Subnet & VLSM Calc</div>
+          </div>
+          <div class="mock-content">
+            <div class="mock-stats-row">
+              <div class="mock-stat">
+                <div class="label">TARGET HOST</div>
+                <div class="val">192.168.1.1</div>
+              </div>
+              <div class="mock-stat">
+                <div class="label">OPEN PORTS</div>
+                <div class="val text-blue">4 OPEN</div>
+              </div>
+              <div class="mock-stat">
+                <div class="label">SCAN DURATION</div>
+                <div class="val">0.34s</div>
+              </div>
+              <div class="mock-stat">
+                <div class="label">CONCURRENCY</div>
+                <div class="val">100 WORKERS</div>
+              </div>
+            </div>
+
+            <!-- Port Matrix Visualizer -->
+            <div class="mock-matrix">
+              <div class="matrix-label">PORT PROBING MATRIX (100 TOP PORTS)</div>
+              <div class="matrix-grid">
+                <span class="dot-open"></span><span class="dot-closed"></span><span class="dot-closed"></span>
+                <span class="dot-open"></span><span class="dot-closed"></span><span class="dot-closed"></span>
+                <span class="dot-closed"></span><span class="dot-open"></span><span class="dot-closed"></span>
+                <span class="dot-closed"></span><span class="dot-closed"></span><span class="dot-open"></span>
+                <span class="dot-closed"></span><span class="dot-closed"></span><span class="dot-closed"></span>
+                <span class="dot-closed"></span><span class="dot-closed"></span><span class="dot-closed"></span>
+                <span class="dot-closed"></span><span class="dot-closed"></span><span class="dot-closed"></span>
+              </div>
+            </div>
+
+            <div class="mock-table">
+              <div class="table-row table-head">
+                <span>PORT</span><span>SERVICE</span><span>RISK</span><span>BANNER / SIGNATURE</span><span>RTT</span>
+              </div>
+              <div class="table-row">
+                <span class="text-blue">22</span><span>SSH</span><span class="badge-neutral">LOW</span><span>OpenSSH_8.9p1 Ubuntu</span><span>1.2ms</span>
+              </div>
+              <div class="table-row">
+                <span class="text-blue">80</span><span>HTTP</span><span class="badge-neutral">LOW</span><span>nginx/1.18.0</span><span>0.8ms</span>
+              </div>
+              <div class="table-row">
+                <span class="text-blue">443</span><span>HTTPS</span><span class="badge-neutral">LOW</span><span>TLSv1.3 ECDHE-RSA</span><span>1.4ms</span>
+              </div>
+              <div class="table-row">
+                <span class="text-blue">51820</span><span>WireGuard</span><span class="badge-warning">MEDIUM</span><span>Encrypted Tunnel Endpoint</span><span>0.6ms</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Tools Grid -->
+  <section class="section" id="features">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">Built for Real Network Engineering</h2>
+        <p class="section-desc">16 enterprise-grade networking tools engineered for precision, speed, and zero fluff.</p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">⚡</div>
+          <h3>Async Port Scanner</h3>
+          <p>Scan 1 to 65,535 ports concurrently with non-blocking sockets, service banner grabbing, live port matrix dots, and CVE risk ratings.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">🌐</div>
+          <h3>Interactive Topology Map</h3>
+          <p>Subnet sweep with real-time ARP/ICMP, MAC OUI vendor resolution, and clickable Gateway &rarr; Switch &rarr; Node interactive SVG diagram.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">🛡️</div>
+          <h3>Client VPN & ProtonVPN Detector</h3>
+          <p>Unfragmented MTU clamping tests (1420/1280B DF-bit), LAN service isolation audit, and single-device deep inspection for mobile phones.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">📈</div>
+          <h3>ISP Multi-Hop Ping Telemetry</h3>
+          <p>Continuous dual-hop latency tracking, RFC 3550 jitter calculation, packet drop audio alerts, and connection stability scoring (A+ to F).</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">🚀</div>
+          <h3>Bandwidth & Bufferbloat Speedtest</h3>
+          <p>Measure high-throughput transfer rates (Mbps) alongside loaded latency to benchmark network queue management under heavy load.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">📶</div>
+          <h3>Wi-Fi Signal & RF Inspector</h3>
+          <p>Native OS Wi-Fi API integration extracting SSID, BSSID, RSSI attenuation (-dBm), radio channel, 2.4/5GHz band, and physical link rate.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">🌍</div>
+          <h3>DNS Swiss Knife & Email Auth</h3>
+          <p>Query 10 record types (A, MX, TXT, SOA, CAA), validate SPF & DMARC policy enforcement, and audit DNSSEC cryptographic signing.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">🛑</div>
+          <h3>Malicious DNS Threat Sinkhole</h3>
+          <p>Audit domains against threat-blocking resolvers (Quad9, Cloudflare Security, CleanBrowsing), brand typosquatting, and subdomains.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">🗺️</div>
+          <h3>Visual Hop Traceroute</h3>
+          <p>Interactive route timeline diagram with AS numbers, BGP prefixes, transit ISP names, Country/City flags, and bottleneck detection.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">🧮</div>
+          <h3>Subnet & VLSM Dynamic Allocator</h3>
+          <p>Interactive 32-bit bitmask editor + VLSM planner: enter department host counts and automatically calculate collision-free subnets.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">📦</div>
+          <h3>Packet Crafter with Presets</h3>
+          <p>Dispatch Layer-4 TCP/UDP frames with ASCII or Hex payloads. Includes 1-click templates for HTTP, DNS raw hex, NTP, SSDP, and Redis.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">⚡</div>
+          <h3>Wake-on-LAN Saved Inventory</h3>
+          <p>Dispatches UDP magic frames across subnets with a persistent device inventory to remotely power on NAS and workstations in 1 click.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quick Start -->
+  <section class="section bg-alt" id="quickstart">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">One-Step Double-Click Execution</h2>
+        <p class="section-desc">Runs natively on Windows, macOS, Linux, and Android. No Node.js runtime required.</p>
+      </div>
+
+      <div class="platform-grid">
+        <div class="platform-card">
+          <div class="platform-header">
+            <span class="platform-tag">Windows</span>
+            <code>start.bat</code>
+          </div>
+          <p>Double-click <strong>start.bat</strong>. Automatically checks Python, auto-installs missing dependencies via pip, and opens the GUI in your default browser.</p>
+        </div>
+
+        <div class="platform-card">
+          <div class="platform-header">
+            <span class="platform-tag">macOS</span>
+            <code>start.command</code> / <code>NSK.app</code>
+          </div>
+          <p>Double-click <strong>start.command</strong> or drag <strong>NSK.app</strong> into your Applications folder. Built with native macOS Finder compatibility.</p>
+        </div>
+
+        <div class="platform-card">
+          <div class="platform-header">
+            <span class="platform-tag">Linux</span>
+            <code>NSK.desktop</code> / <code>./start.sh</code>
+          </div>
+          <p>Double-click the <strong>NSK.desktop</strong> launcher or run <code>./start.sh</code> in terminal. Preserves native executable permissions.</p>
+        </div>
+
+        <div class="platform-card">
+          <div class="platform-header">
+            <span class="platform-tag">Android</span>
+            <code>PWA Installable</code>
+          </div>
+          <p>Access your PC or server's LAN IP from Chrome/Firefox on your Android device and tap <strong>Add to Home screen</strong> for a native mobile experience.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer-content">
+      <div>
+        <div class="logo">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span style="font-weight: 700; color: #f1f5f9; margin-left: 8px;">Network Swiss Knife (NSK)</span>
+        </div>
+        <p style="color: #64748b; font-size: 13px; margin-top: 6px;">
+          Released under the MIT License &bull; Designed & Built for Network Engineers
+        </p>
+      </div>
+
+      <div class="footer-links">
+        <a href="https://github.com/alivirgo/shiny-doodle-network-port-scanner">GitHub Repository</a>
+        <a href="https://github.com/alivirgo/shiny-doodle-network-port-scanner/releases">All Releases</a>
+        <a href="https://github.com/alivirgo/shiny-doodle-network-port-scanner/issues">Report an Issue</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

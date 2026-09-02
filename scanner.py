@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Shiny Doodle Network Swiss Knife 2.0 - CLI & Engine Entrypoint
-Maintains 100% backwards compatibility with original 2020 syntax while providing
-asynchronous multi-threaded port scanning and launching the full cross-platform GUI.
+Network Swiss Knife (NSK) 2.5 - CLI & Engine Entrypoint
+Maintains 100% backwards-compatibility with original CLI parameters
+while adding multi-threading, concurrency control, and GUI launching.
 """
 
 import sys

@@ -19,6 +19,7 @@ from core.subnet_calc import calculate_subnet, calculate_vlsm
 from core.packet_crafter import send_custom_packet, start_echo_listener, stop_echo_listener, get_templates
 from core.speedtest import run_throughput_benchmark
 from core.wifi_inspector import get_wifi_details
+from core.tunnel import start_cloudflare_tunnel, stop_cloudflare_tunnel, get_tunnel_status
 from core.advanced_tools import (
     send_wake_on_lan, check_arp_spoofing, get_network_interfaces_traffic,
     find_optimal_mtu, check_ntp_drift, discover_upnp_devices, get_active_system_sockets
@@ -157,6 +158,19 @@ async def api_speedtest_run(duration: float = 3.0):
 @app.get("/api/wifi/status")
 def api_wifi_status():
     return get_wifi_details()
+
+# ----------------- CLOUDFLARE TUNNEL (NETWORK SHARING) -----------------
+@app.get("/api/tunnel/status")
+def api_tunnel_status():
+    return get_tunnel_status()
+
+@app.post("/api/tunnel/start")
+async def api_tunnel_start(port: int = 8000):
+    return await start_cloudflare_tunnel(local_port=port)
+
+@app.post("/api/tunnel/stop")
+def api_tunnel_stop():
+    return stop_cloudflare_tunnel()
 
 # ----------------- PACKET CRAFTER -----------------
 @app.get("/api/packet/templates")

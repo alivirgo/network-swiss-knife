@@ -55,8 +55,8 @@
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/alivirgo/shiny-doodle-network-port-scanner.git
-cd shiny-doodle-network-port-scanner
+git clone https://github.com/alivirgo/network-swiss-knife.git
+cd network-swiss-knife
 ```
 
 ### 2. Install Dependencies

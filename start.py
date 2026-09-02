@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
-Shiny Doodle Network Swiss Knife 2.0 - Unified Cross-Platform Launcher
-Supports Windows, macOS, and Linux desktop environments, and serves responsive web GUI for mobile/Android.
-Automatically verifies dependencies and launches default browser.
+Network Swiss Knife (NSK) 2.5 - Unified Cross-Platform Launcher
+Auto-installs dependencies on first run and opens default browser.
 """
 
 import os

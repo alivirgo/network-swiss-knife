@@ -1,0 +1,18 @@
+{
+  "name": "Shiny Doodle Network Swiss Knife",
+  "short_name": "ShinyDoodle",
+  "description": "High performance cross-platform networking toolkit",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

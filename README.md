@@ -1,25 +1,116 @@
-# shiny-doodle-network-port-scanner Port Scanner on Github Opensource Code 2020
-The idea of shiny-doodle port scanner is to run through a list of ports, testing to see if they are open over the network.
+# 🛠️ Shiny Doodle &mdash; Network Swiss Knife 2.0
 
-Port scanning may be defined as a surveillance technique, which is used in order to locate the open ports available on a particular host. Network administrator, penetration tester or a hacker can use this technique. We can configure the port scanner according to our requirements to get maximum information from the target system.
+> **Turned from a 2020 single-threaded script into an enterprise-grade, cross-platform networking powerhouse.**
+> Built for **Windows, macOS, Linux, and Android** with a modest, ultra-clean engineering GUI and asynchronous network engine.
 
-Now, consider the information we can get after running the port scan −
+---
 
-    Information about open ports.
+## ⚡ Highlights & Key Capabilities
 
-    Information about the services running on each port.
+- **Zero Clutter, Engineering Aesthetics**: Built with clean, modest, readable telemetry data tables, crisp typography, and live SVG sparklines &mdash; *no tacky AI cards or neon gimmicks*.
+- **Cross-Platform by Design**:
+  - **Desktop (Windows, macOS, Linux)**: 1-click execution (`start.bat`, `start.sh`, or `python start.py`).
+  - **Mobile (Android / iOS)**: Responsive touch-first layout + PWA support (installable directly to your home screen).
+- **Asynchronous High-Speed Engine**: Python 3.12 `asyncio` backend capable of scanning thousands of ports per second without UI freezing.
+- **Dual Mode**: Runs both as a high-powered GUI application and a backwards-compatible CLI scanner.
 
-    Information about OS and MAC address of the target host.
+---
 
-Port scanning is just like a thief who wants to enter into a house by checking every door and window to see which ones are open. As discussed earlier, TCP/IP protocol suite, use for communication over internet, is made up of two protocols namely TCP and UDP. Both of the protocols have 0 to 65535 ports. As it always advisable to close unnecessary ports of our system hence essentially, there are more than 65000 doors (ports) to lock. These 65535 ports can be divided into the following three ranges −
+## 🧰 The Complete Networking Toolkit
 
-    System or well-known ports: from 0 to 1023
+### 1. 🔍 Core Discovery & Scanning
+- **High-Speed Async Port Scanner**: TCP connect & SYN scan with configurable concurrency (10–500 workers), service banner grabbing, and risk vulnerability levels.
+- **LAN Host Discovery**: High-speed ARP & ICMP subnet sweep with MAC hardware vendor OUI identification (Apple, Intel, Cisco, Raspberry Pi, etc.) and device role tags.
+- **LAN VPN User Finder**: Scans local networks to detect active VPN servers and proxy tunnels (WireGuard `51820`, OpenVPN `1194`, IPsec `500/4500`, PPTP `1723`, SOCKS5 `1080`, Shadowsocks `8388`) and audits local virtual adapters.
 
-    User or registered ports: from 1024 to 49151
+### 2. 📈 Telemetry & Monitoring
+- **ISP & Gateway Network Ping Monitor**: Separates local Wi-Fi / router gateway latency from external ISP hop latency with continuous jitter and packet loss telemetry.
+- **DNS Resolver Latency Benchmark**: Real-time ping comparison across Cloudflare, Google, Quad9, OpenDNS, and AdGuard.
+- **Malicious DNS Threat Sinkhole Check**: Probes domains against threat-intelligence blocking resolvers (Quad9 malware filter, Cloudflare security, CleanBrowsing) to flag phishing, malware, and sinkholed C2 servers.
+- **Visual Hop Traceroute**: Hop-by-hop latency tracing enriched with Autonomous System (AS) numbers, ISP, and Country/City geolocation.
 
-    Dynamic or private ports: all > 49151
+### 3. 🛡️ Security & Protocol Analyzers
+- **SSL / TLS Certificate Inspector**: Analyzes certificate validity, days until expiration, cipher suites, protocol versions, and Subject Alternative Names (SANs).
+- **HTTP Security Header Audit**: Evaluates HSTS, CSP, X-Frame-Options, CORS, and detects web servers and CDN edge providers.
+- **IP & Subnet / CIDR Calculator**: IPv4 & IPv6 VLSM calculator, usable host range, wildcard mask, binary network representation, and subnet splitting.
 
-# Usage
-    python scanner.py <IP>
-    Enter Port Start and End When Asked
+### 4. ⚙️ Sockets & Power Tools
+- **Packet Crafter & Socket Dispatcher**: Transmit custom raw ASCII or Hex payloads over TCP or UDP and view returned stream replies.
+- **On-Demand Socket Listener**: Spin up temporary local TCP listening ports on `0.0.0.0` to verify port forwarding and inbound firewall rules.
+- **Wake-on-LAN (WoL)**: Dispatch raw UDP magic packets to wake remote networked machines.
+- **ARP Poisoning & MITM Detector**: Audits the OS ARP cache for duplicate MAC entries or gateway spoofing.
+- **Optimal Path MTU Finder**: Discovers maximum unfragmented transmission units using DF ping sweeps.
+- **NTP Time Sync & Drift Analyzer**: Calculates millisecond clock offset and stratum against atomic time servers.
+- **Hardware Interface Monitor**: Live per-interface RX/TX byte counters, link speed, and packet drop tracking.
+- **65,535 Port Reference Directory**: Searchable IANA port assignment database with common security risks and default credentials.
+- **Unified Audit Report Generator**: 1-click export of complete network diagnostic data to Markdown (`.md`) or raw JSON (`.json`).
 
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Python 3.10+
+- (Optional) Node.js 18+ (only needed if customizing frontend sources; production builds are already pre-compiled into the repository!)
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/alivirgo/shiny-doodle-network-port-scanner.git
+cd shiny-doodle-network-port-scanner
+```
+
+### 2. Install Dependencies
+```bash
+pip install -r backend/requirements.txt
+```
+
+### 3. Launch the Application
+
+#### **Windows**
+Double-click `start.bat` or run:
+```powershell
+python start.py
+```
+
+#### **macOS / Linux**
+```bash
+chmod +x start.sh
+./start.sh
+```
+
+#### **Android / Mobile**
+1. Run `python start.py` on your computer on the same Wi-Fi network.
+2. The launcher will output your LAN IP address (e.g., `http://192.168.1.50:8000`).
+3. Open this URL on your Android device in Chrome or Firefox.
+4. Tap **Add to Home screen** to install it as an Android Progressive Web App (PWA)!
+
+---
+
+## 💻 CLI Usage
+
+The CLI remains 100% backwards-compatible with the 2020 version, but now runs at blazing async speeds:
+
+```bash
+# Interactive mode (prompts for start and end ports)
+python scanner.py 192.168.1.1
+
+# Direct port range
+python scanner.py 192.168.1.1 -p 20-1000 -c 200
+
+# Launch GUI directly
+python scanner.py --gui
+```
+
+---
+
+## 🧪 Testing
+
+Run the automated test suite covering all core networking modules and API endpoints:
+```bash
+python -m pytest
+```
+
+---
+
+## 📜 License
+GPLv3 &mdash; see [LICENSE](LICENSE) for details.

@@ -1,0 +1,75 @@
+#!/usr/bin/env python3
+"""
+Shiny Doodle Network Swiss Knife 2.0 - Unified Cross-Platform Launcher
+Supports Windows, macOS, and Linux desktop environments, and serves responsive web GUI for mobile/Android.
+"""
+
+import os
+import sys
+import subprocess
+import webbrowser
+import time
+import socket
+
+def check_port_open(port: int, host: str = "127.0.0.1") -> bool:
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        s.settimeout(0.5)
+        s.connect((host, port))
+        s.close()
+        return True
+    except Exception:
+        return False
+
+def get_lan_ip() -> str:
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "127.0.0.1"
+
+def print_banner():
+    banner = r"""
+===================================================================
+    ____  __     _             ____                  ____   ____
+   / __/ / /_   (_)____  __  __/ __ \____  ____  ____/ / /__<  / /
+  _\ \  / __ \ / // __ \/ / / / / / / __ \/ __ \/ __  / / _ \/ / / 
+ /___/ / / / // // / / / /_/ / /_/ / /_/ / /_/ / /_/ / /  __/ / /  
+      /_/ /_//_//_/ /_/\__, /\____/\____/\____/\__,_/_/\___/_/_/   
+                      /____/  NETWORK SWISS KNIFE 2.0
+===================================================================
+"""
+    print(banner)
+
+def main():
+    print_banner()
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    backend_dir = os.path.join(base_dir, "backend")
+    static_dir = os.path.join(backend_dir, "static")
+
+    port = 8000
+    lan_ip = get_lan_ip()
+
+    print(f"[*] Starting Shiny Doodle Network Engine on port {port}...")
+    print(f"[*] Local access:       http://localhost:{port}")
+    print(f"[*] Android / LAN access: http://{lan_ip}:{port}")
+    print(f"[*] Press Ctrl+C to terminate the engine\n")
+
+    # Launch browser after a brief delay
+    def open_browser():
+        time.sleep(1.2)
+        webbrowser.open(f"http://localhost:{port}")
+
+    import threading
+    threading.Thread(target=open_browser, daemon=True).start()
+
+    # Run uvicorn
+    import uvicorn
+    sys.path.insert(0, backend_dir)
+    uvicorn.run("main:app", host="0.0.0.0", port=port, log_level="info", app_dir=backend_dir)
+
+if __name__ == "__main__":
+    main()

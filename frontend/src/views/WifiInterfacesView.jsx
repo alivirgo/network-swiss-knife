@@ -91,10 +91,15 @@ export default function WifiInterfacesView() {
                 <div className="metric-label">Physical Link Speed</div>
                 <div className="metric-val mono">{wifi.link_speed_mbps ? `${wifi.link_speed_mbps} Mbps` : '-'}</div>
               </div>
+
+              <div className="metric-box">
+                <div className="metric-label">Access Point BSSID</div>
+                <div className="metric-val mono" style={{ fontSize: 13 }}>{wifi.bssid}</div>
+              </div>
             </div>
 
-            <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
-              Status: <span className="mono" style={{ color: '#94a3b8' }}>{wifi.raw_status}</span> &bull; Security: <span className="mono" style={{ color: '#94a3b8' }}>{wifi.security}</span>
+            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 8, padding: '8px 12px', backgroundColor: '#070a12', borderRadius: 4, border: '1px solid #1e293b' }}>
+              <strong>Adapter:</strong> <span className="mono" style={{ color: '#f1f5f9' }}>{wifi.adapter_name || wifi.raw_status}</span> &bull; <strong>Security:</strong> <span className="mono" style={{ color: '#38bdf8' }}>{wifi.security}</span>
             </div>
           </div>
         )}

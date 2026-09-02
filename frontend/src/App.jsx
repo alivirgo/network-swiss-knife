@@ -96,10 +96,10 @@ export default function App() {
         <div className="sidebar-header">
           <Shield size={20} color="#38bdf8" />
           <div style={{ flex: 1 }}>
-            <div className="app-title">Shiny Doodle</div>
-            <div style={{ fontSize: 11, color: '#64748b' }}>Network Swiss Knife</div>
+            <div className="app-title">Network Swiss Knife</div>
+            <div style={{ fontSize: 11, color: '#64748b' }}>NSK Toolkit</div>
           </div>
-          <span className="app-badge">2.0</span>
+          <span className="app-badge">NSK</span>
           {sidebarOpen && (
             <button
               onClick={() => setSidebarOpen(false)}

@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "backend"))
 def run_cli_scanner(target: str, start_port: int, end_port: int, concurrency: int = 150):
     from core.scanner import scan_ports
     print("=" * 60)
-    print(f"[*] Shiny Doodle Network Swiss Knife 2.0")
+    print(f"[*] Network Swiss Knife (NSK) 2.0")
     print(f"[*] Scanning Target: {target}")
     print(f"[*] Port Range:      {start_port} -> {end_port}")
     print(f"[*] Concurrency:     {concurrency} workers")
@@ -44,7 +44,7 @@ def run_cli_scanner(target: str, start_port: int, end_port: int, concurrency: in
     print("[*] Tip: Launch the full cross-platform GUI by running: python start.py")
 
 def main():
-    parser = argparse.ArgumentParser(description="Shiny Doodle Network Swiss Knife 2.0")
+    parser = argparse.ArgumentParser(description="Network Swiss Knife (NSK) 2.0")
     parser.add_argument("target", nargs="?", help="Target IP or hostname to scan")
     parser.add_argument("--gui", action="store_true", help="Launch the GUI in your default browser")
     parser.add_argument("-p", "--ports", help="Port range (e.g. 1-1024)", default=None)

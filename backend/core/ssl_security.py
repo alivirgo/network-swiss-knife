@@ -87,7 +87,7 @@ def analyze_http_security(url: str) -> Dict[str, Any]:
     try:
         req = urllib.request.Request(
             target_url,
-            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) ShinyDoodle/2.0"},
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) NSK/2.0"},
             method="HEAD"
         )
         with urllib.request.urlopen(req, timeout=4.0) as resp:

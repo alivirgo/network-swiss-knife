@@ -106,7 +106,7 @@ async def start_echo_listener(port: int, protocol: str = "TCP") -> Dict[str, Any
             async def handle_client(reader, writer):
                 data = await reader.read(512)
                 if data:
-                    writer.write(b"SHINY_DOODLE_ECHO: " + data)
+                    writer.write(b"NSK_ECHO: " + data)
                     await writer.drain()
                 writer.close()
 

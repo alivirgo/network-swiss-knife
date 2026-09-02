@@ -1,4 +1,4 @@
-# 🛠️ Shiny Doodle &mdash; Network Swiss Knife 2.0
+# 🛠️ Network Swiss Knife (NSK) 2.0
 
 > **Turned from a 2020 single-threaded script into an enterprise-grade, cross-platform networking powerhouse.**
 > Built for **Windows, macOS, Linux, and Android** with a modest, ultra-clean engineering GUI and asynchronous network engine.
@@ -66,11 +66,11 @@ pip install -r backend/requirements.txt
 
 ### 3. Launch the Application (Double-Click Ready!)
 
-Shiny Doodle is configured for 1-step **double-click** execution on all major platforms:
+Network Swiss Knife (NSK) is configured for 1-step **double-click** execution on all major platforms:
 
 - 🪟 **Windows**: Double-click **`start.bat`** (or run `python start.py`).
-- 🍎 **macOS**: Double-click **`start.command`** or open **`ShinyDoodle.app`**.
-- 🐧 **Linux**: Double-click **`ShinyDoodle.desktop`** (or `./start.sh`).
+- 🍎 **macOS**: Double-click **`start.command`** or open **`NSK.app`**.
+- 🐧 **Linux**: Double-click **`NSK.desktop`** (or `./start.sh`).
 - 📱 **Android**: Run the app on your PC or server, open the displayed LAN IP in Chrome/Firefox, and tap **Add to Home screen**!
 
 > **Note**: On first launch, the application automatically verifies and installs any missing Python dependencies.

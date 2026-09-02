@@ -1,9 +1,9 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-title Shiny Doodle Network Swiss Knife 2.0
+title Network Swiss Knife (NSK) 2.0
 
-echo [!] Launching Shiny Doodle Network Swiss Knife...
+echo [!] Launching Network Swiss Knife (NSK)...
 
 :: Check python command
 where python >nul 2>&1

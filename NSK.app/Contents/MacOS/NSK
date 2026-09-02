@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Resolves the parent directory of ShinyDoodle.app
+# Resolves the parent directory of NSK.app
 APP_DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
 cd "$APP_DIR" || exit 1
 
@@ -8,5 +8,5 @@ if command -v python3 &>/dev/null; then
 elif command -v python &>/dev/null; then
     exec python start.py
 else
-    osascript -e 'display dialog "Python 3 is required to run Shiny Doodle. Please install Python 3 from python.org." buttons {"OK"} default button "OK" with icon stop'
+    osascript -e 'display dialog "Python 3 is required to run Network Swiss Knife (NSK). Please install Python 3 from python.org." buttons {"OK"} default button "OK" with icon stop'
 fi

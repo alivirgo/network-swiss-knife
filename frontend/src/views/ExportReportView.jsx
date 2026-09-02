@@ -32,7 +32,7 @@ export default function ExportReportView() {
       if (reportFormat === 'json') {
         output = JSON.stringify({ timestamp, isp, lan, vpn }, null, 2);
       } else {
-        output = `# SHINY DOODLE NETWORK AUDIT REPORT\n`;
+        output = `# NETWORK SWISS KNIFE (NSK) AUDIT REPORT\n`;
         output += `Generated At: ${timestamp}\n\n`;
 
         if (isp) {

@@ -7,7 +7,7 @@ client = TestClient(main.app)
 def test_static_index():
     response = client.get("/")
     assert response.status_code == 200
-    assert "Shiny Doodle" in response.text
+    assert "Network Swiss Knife" in response.text or "NSK" in response.text
 
 def test_api_lan_info():
     response = client.get("/api/lan/info")

@@ -52,7 +52,7 @@ async def grab_banner(host: str, port: int, timeout: float = 1.2) -> str:
         banner = ""
         # For HTTP/HTTPS ports send a probe
         if port in [80, 8080, 8000, 3000, 5000]:
-            writer.write(b"HEAD / HTTP/1.1\r\nHost: " + host.encode() + b"\r\nUser-Agent: ShinyDoodle/2.0\r\n\r\n")
+            writer.write(b"HEAD / HTTP/1.1\r\nHost: " + host.encode() + b"\r\nUser-Agent: NSK/2.0\r\n\r\n")
             await writer.drain()
         try:
             data = await asyncio.wait_for(reader.read(512), timeout=0.8)

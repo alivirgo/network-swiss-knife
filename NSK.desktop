@@ -1,7 +1,7 @@
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=Shiny Doodle Network Swiss Knife
+Name=Network Swiss Knife (NSK)
 Comment=High-Performance Cross-Platform Networking Toolkit
 Exec=bash -c 'cd "$(dirname "%k")" && ./start.sh'
 Path=.

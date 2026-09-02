@@ -1,6 +1,6 @@
 {
-  "name": "Shiny Doodle Network Swiss Knife",
-  "short_name": "ShinyDoodle",
+  "name": "Network Swiss Knife (NSK)",
+  "short_name": "NSK",
   "description": "High performance cross-platform networking toolkit",
   "start_url": "/",
   "display": "standalone",

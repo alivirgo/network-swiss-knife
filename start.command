@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Shiny Doodle Network Swiss Knife - Double-click launcher for macOS
+# Network Swiss Knife (NSK) - Double-click launcher for macOS
 cd "$(dirname "$0")" || exit 1
 
 echo "================================================="
-echo "  Shiny Doodle Network Swiss Knife 2.0 (macOS)   "
+echo "       Network Swiss Knife (NSK) (macOS)         "
 echo "================================================="
 
 if command -v python3 &>/dev/null; then

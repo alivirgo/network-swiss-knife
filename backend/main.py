@@ -24,7 +24,7 @@ from core.advanced_tools import (
 from core.port_db import search_ports, PORT_DATABASE
 
 app = FastAPI(
-    title="Shiny Doodle Network Swiss Knife",
+    title="Network Swiss Knife (NSK)",
     description="Cross-platform high-performance networking toolkit",
     version="2.0.0"
 )
@@ -209,7 +209,7 @@ else:
     @app.get("/")
     def index():
         return {
-            "name": "Shiny Doodle Network Swiss Knife API",
+            "name": "Network Swiss Knife (NSK) API",
             "version": "2.0.0",
             "docs": "/docs",
             "status": "online"

@@ -18,7 +18,7 @@ def get_ip_geo(ip: str) -> Dict[str, Any]:
 
     try:
         url = f"http://ip-api.com/json/{ip}?fields=status,country,city,isp,as,lat,lon"
-        req = urllib.request.Request(url, headers={"User-Agent": "ShinyDoodle/2.0"})
+        req = urllib.request.Request(url, headers={"User-Agent": "NSK/2.0"})
         with urllib.request.urlopen(req, timeout=2.0) as resp:
             data = json.loads(resp.read().decode())
             if data.get("status") == "success":

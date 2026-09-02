@@ -64,12 +64,11 @@ def get_lan_ip() -> str:
 def print_banner():
     banner = r"""
 ===================================================================
-    ____  __     _             ____                  ____   ____
-   / __/ / /_   (_)____  __  __/ __ \____  ____  ____/ / /__<  / /
-  _\ \  / __ \ / // __ \/ / / / / / / __ \/ __ \/ __  / / _ \/ / / 
- /___/ / / / // // / / / /_/ / /_/ / /_/ / /_/ / /_/ / /  __/ / /  
-      /_/ /_//_//_/ /_/\__, /\____/\____/\____/\__,_/_/\___/_/_/   
-                      /____/  NETWORK SWISS KNIFE 2.0
+    _   _______ __ __
+   / | / / ___// //_/  NETWORK SWISS KNIFE (NSK) 2.0
+  /  |/ /\__ \/ ,<     Cross-Platform Networking Toolkit
+ / /|  /___/ / /| |
+/_/ |_//____/_/ |_|
 ===================================================================
 """
     print(banner)
@@ -82,7 +81,7 @@ def main():
     port = 8000
     lan_ip = get_lan_ip()
 
-    print(f"[*] Starting Shiny Doodle Network Engine on port {port}...")
+    print(f"[*] Starting Network Swiss Knife (NSK) Engine on port {port}...")
     print(f"[*] Local access:         http://localhost:{port}")
     print(f"[*] Android / LAN access: http://{lan_ip}:{port}")
     print(f"[*] Press Ctrl+C to stop the application\n")

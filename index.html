@@ -21,11 +21,11 @@
         <span class="badge">v2.5.0</span>
       </div>
       <div class="nav-links">
+        <a href="#live-console">Live Web App</a>
         <a href="#features">Tools</a>
-        <a href="#topology">Topology</a>
         <a href="#quickstart">Quick Start</a>
         <a href="#downloads" class="btn btn-primary btn-sm">Download NSK</a>
-        <a href="https://github.com/alivirgo/shiny-doodle-network-port-scanner" target="_blank" class="btn btn-secondary btn-sm">GitHub</a>
+        <a href="https://github.com/alivirgo/network-swiss-knife" target="_blank" class="btn btn-secondary btn-sm">GitHub</a>
       </div>
     </div>
   </nav>
@@ -45,11 +45,11 @@
       </p>
 
       <div class="hero-actions" id="downloads">
-        <a href="https://github.com/alivirgo/shiny-doodle-network-port-scanner/releases/latest/download/NSK-2.5.0-Windows.zip" class="btn btn-primary btn-lg">
+        <a href="https://github.com/alivirgo/network-swiss-knife/releases/latest/download/NSK-2.5.0-Windows.zip" class="btn btn-primary btn-lg">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17l6 5 10-18"/></svg>
           Download for Windows (.zip)
         </a>
-        <a href="https://github.com/alivirgo/shiny-doodle-network-port-scanner/releases/latest/download/NSK-2.5.0-macOS-Linux.tar.gz" class="btn btn-secondary btn-lg">
+        <a href="https://github.com/alivirgo/network-swiss-knife/releases/latest/download/NSK-2.5.0-macOS-Linux.tar.gz" class="btn btn-secondary btn-lg">
           Download for macOS & Linux (.tar.gz)
         </a>
       </div>
@@ -141,6 +141,126 @@
       </div>
     </div>
   </header>
+
+  <!-- Live Web Console & Cloudflare Node Bridge -->
+  <section class="section bg-alt" id="live-console">
+    <div class="container">
+      <div class="section-header">
+        <div class="hero-badge" style="margin-bottom: 12px;">
+          <span class="pulse-dot"></span>
+          Live In-Browser Diagnostics &amp; Cloudflare Network Bridge
+        </div>
+        <h2 class="section-title">Use NSK Live on the Web</h2>
+        <p class="section-desc">
+          Run diagnostics directly in your browser powered by Cloudflare DNS-over-HTTPS (DoH), or connect across your network to your local NSK node via Cloudflare Tunnel.
+        </p>
+      </div>
+
+      <div class="app-window" style="max-width: 900px; margin: 0 auto;">
+        <div class="window-header">
+          <div style="display: flex; gap: 8px;">
+            <button id="tab-btn-dns" class="btn btn-primary btn-sm" onclick="switchWebTab('dns')">Cloudflare DoH DNS</button>
+            <button id="tab-btn-subnet" class="btn btn-secondary btn-sm" onclick="switchWebTab('subnet')">Subnet Calculator</button>
+            <button id="tab-btn-bridge" class="btn btn-secondary btn-sm" onclick="switchWebTab('bridge')">Connect Local Node</button>
+          </div>
+          <div class="window-status"><span class="live-indicator"></span> BROWSER ENGINE ACTIVE</div>
+        </div>
+
+        <div style="padding: 24px;">
+          <!-- 1. Cloudflare DoH Tab -->
+          <div id="web-pane-dns">
+            <div style="font-size: 13px; color: #94a3b8; margin-bottom: 14px;">
+              Query authoritative DNS records and evaluate threat-sinkholing in real time via <strong>Cloudflare 1.1.1.1 / 1.1.1.2 DoH Edge</strong>:
+            </div>
+            <form id="cf-dns-form" onsubmit="executeCloudflareDns(event)" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px;">
+              <input id="cf-domain" class="mono" style="flex: 1 1 240px; background: #070c18; border: 1px solid #1e293b; color: #f1f5f9; padding: 8px 12px; border-radius: 6px; font-size: 13px;" placeholder="e.g. google.com or paypal.com" value="cloudflare.com" required>
+              <select id="cf-type" style="background: #070c18; border: 1px solid #1e293b; color: #f1f5f9; padding: 8px 12px; border-radius: 6px; font-size: 13px;">
+                <option value="A">A Record (IPv4)</option>
+                <option value="AAAA">AAAA Record (IPv6)</option>
+                <option value="MX">MX (Mail)</option>
+                <option value="TXT">TXT / SPF / DMARC</option>
+                <option value="NS">NS (Nameservers)</option>
+                <option value="CAA">CAA (Cert Auth)</option>
+              </select>
+              <button class="btn btn-primary btn-sm" type="submit" id="cf-dns-submit">Query via Cloudflare</button>
+            </form>
+
+            <div id="cf-dns-results" style="display: none;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase;">Cloudflare DoH Response:</span>
+                <span id="cf-security-verdict" class="badge">CLEAN</span>
+              </div>
+              <div class="mock-table" style="max-height: 220px; overflow-y: auto;">
+                <div class="table-row table-head">
+                  <span>NAME</span><span>TYPE</span><span>TTL</span><span style="grid-column: span 2;">DATA / RESOLVED ADDRESS</span>
+                </div>
+                <div id="cf-dns-rows"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Subnet Calculator Tab -->
+          <div id="web-pane-subnet" style="display: none;">
+            <div style="font-size: 13px; color: #94a3b8; margin-bottom: 14px;">
+              Calculate IPv4 network boundaries, wildcard masks, usable host ranges, and binary representation directly in your browser:
+            </div>
+            <form onsubmit="executeWebSubnet(event)" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px;">
+              <input id="web-cidr" class="mono" style="flex: 1 1 240px; background: #070c18; border: 1px solid #1e293b; color: #f1f5f9; padding: 8px 12px; border-radius: 6px; font-size: 13px;" placeholder="e.g. 192.168.1.0/24 or 10.0.0.0/16" value="192.168.1.0/24" required>
+              <button class="btn btn-primary btn-sm" type="submit">Calculate Subnet</button>
+            </form>
+
+            <div id="web-subnet-results">
+              <div class="mock-stats-row">
+                <div class="mock-stat">
+                  <div class="label">NETMASK</div>
+                  <div class="val text-blue" id="sub-netmask">255.255.255.0</div>
+                </div>
+                <div class="mock-stat">
+                  <div class="label">USABLE HOSTS</div>
+                  <div class="val" id="sub-hosts">254</div>
+                </div>
+                <div class="mock-stat">
+                  <div class="label">FIRST USABLE</div>
+                  <div class="val" id="sub-first">192.168.1.1</div>
+                </div>
+                <div class="mock-stat">
+                  <div class="label">LAST USABLE</div>
+                  <div class="val" id="sub-last">192.168.1.254</div>
+                </div>
+              </div>
+              <div style="margin-top: 10px; font-size: 12px; font-family: 'JetBrains Mono', monospace; background: #070c18; padding: 10px; border-radius: 6px; border: 1px solid #1e293b; color: #38bdf8;" id="sub-binary">
+                Binary: 11000000.10101000.00000001.00000000
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Local / Cloudflare Node Bridge Tab -->
+          <div id="web-pane-bridge" style="display: none;">
+            <div style="font-size: 13px; color: #94a3b8; margin-bottom: 14px;">
+              Bridge this web page to your local NSK daemon or Cloudflare Tunnel to execute live port scans, LAN discovery, and VPN checks across your network:
+            </div>
+            <form onsubmit="executeNodeBridge(event)" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px;">
+              <input id="node-url" class="mono" style="flex: 1 1 300px; background: #070c18; border: 1px solid #1e293b; color: #f1f5f9; padding: 8px 12px; border-radius: 6px; font-size: 13px;" placeholder="e.g. http://localhost:8000 or https://xxx.trycloudflare.com" value="http://localhost:8000" required>
+              <button class="btn btn-primary btn-sm" type="submit" id="bridge-btn">Bridge Connection</button>
+            </form>
+
+            <div id="bridge-status" style="padding: 12px; background: #070c18; border: 1px solid #1e293b; border-radius: 6px; font-size: 13px; color: #94a3b8;">
+              Status: Enter your local NSK URL (or click "Share Over Network" in the NSK app to get a Cloudflare URL) and click <strong>Bridge Connection</strong>.
+            </div>
+
+            <div id="bridge-actions" style="display: none; margin-top: 14px;">
+              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="btn btn-secondary btn-sm" onclick="runRemoteScan()">⚡ Run Quick Port Scan</button>
+                <button class="btn btn-secondary btn-sm" onclick="runRemoteLan()">🌐 Run LAN Discovery</button>
+                <button class="btn btn-secondary btn-sm" onclick="openRemoteGui()">🖥️ Open Full NSK Dashboard</button>
+              </div>
+              <div id="remote-scan-results" style="margin-top: 12px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #10b981; background: #070a12; padding: 10px; border-radius: 6px; max-height: 160px; overflow-y: auto; display: none;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <!-- Tools Grid -->
   <section class="section" id="features">
@@ -284,12 +404,193 @@
       </div>
 
       <div class="footer-links">
-        <a href="https://github.com/alivirgo/shiny-doodle-network-port-scanner">GitHub Repository</a>
-        <a href="https://github.com/alivirgo/shiny-doodle-network-port-scanner/releases">All Releases</a>
-        <a href="https://github.com/alivirgo/shiny-doodle-network-port-scanner/issues">Report an Issue</a>
+        <a href="https://github.com/alivirgo/network-swiss-knife">GitHub Repository</a>
+        <a href="https://github.com/alivirgo/network-swiss-knife/releases">All Releases</a>
+        <a href="https://github.com/alivirgo/network-swiss-knife/issues">Report an Issue</a>
       </div>
     </div>
   </footer>
 
+  <script>
+    // Tab switcher
+    function switchWebTab(tab) {
+      ['dns', 'subnet', 'bridge'].forEach(t => {
+        document.getElementById('web-pane-' + t).style.display = (t === tab) ? 'block' : 'none';
+        const btn = document.getElementById('tab-btn-' + t);
+        if (t === tab) {
+          btn.className = 'btn btn-primary btn-sm';
+        } else {
+          btn.className = 'btn btn-secondary btn-sm';
+        }
+      });
+    }
+
+    // Cloudflare DoH Query & Threat Sinkhole Check
+    async function executeCloudflareDns(e) {
+      e.preventDefault();
+      const domain = document.getElementById('cf-domain').value.trim();
+      const type = document.getElementById('cf-type').value;
+      const submitBtn = document.getElementById('cf-dns-submit');
+      const resultsArea = document.getElementById('cf-dns-results');
+      const rowsArea = document.getElementById('cf-dns-rows');
+      const verdictBadge = document.getElementById('cf-security-verdict');
+
+      submitBtn.innerText = 'Querying DoH...';
+      submitBtn.disabled = true;
+
+      try {
+        const [dohRes, secRes] = await Promise.all([
+          fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(domain)}&type=${type}`, {
+            headers: { 'accept': 'application/dns-json' }
+          }).then(r => r.json()),
+          fetch(`https://security.cloudflare-dns.com/dns-query?name=${encodeURIComponent(domain)}&type=${type}`, {
+            headers: { 'accept': 'application/dns-json' }
+          }).then(r => r.json()).catch(() => ({}))
+        ]);
+
+        resultsArea.style.display = 'block';
+        rowsArea.innerHTML = '';
+
+        // Check if blocked by Cloudflare 1.1.1.2 Security filter
+        const isSinkholed = secRes.Answer && secRes.Answer.some(a => ['0.0.0.0', '127.0.0.1'].includes(a.data));
+        if (isSinkholed) {
+          verdictBadge.className = 'badge badge-warning';
+          verdictBadge.innerText = 'THREAT SINKHOLE DETECTED (Blocked by Cloudflare Security)';
+        } else {
+          verdictBadge.className = 'badge';
+          verdictBadge.innerText = 'RESOLVED VIA CLOUDFLARE EDGE';
+        }
+
+        if (dohRes.Answer && dohRes.Answer.length > 0) {
+          dohRes.Answer.forEach(ans => {
+            const row = document.createElement('div');
+            row.className = 'table-row';
+            row.innerHTML = `
+              <span>${ans.name}</span>
+              <span class="badge-neutral">${type}</span>
+              <span>${ans.TTL}s</span>
+              <span class="text-blue" style="grid-column: span 2;">${ans.data}</span>
+            `;
+            rowsArea.appendChild(row);
+          });
+        } else {
+          rowsArea.innerHTML = `<div style="padding: 14px; text-align: center; color: #64748b;">No ${type} records found or NXDOMAIN returned.</div>`;
+        }
+      } catch (err) {
+        resultsArea.style.display = 'block';
+        rowsArea.innerHTML = `<div style="padding: 14px; color: #ef4444;">DoH query failed: ${err.message}</div>`;
+      } finally {
+        submitBtn.innerText = 'Query via Cloudflare';
+        submitBtn.disabled = false;
+      }
+    }
+
+    // In-Browser Subnet Calculator
+    function executeWebSubnet(e) {
+      e.preventDefault();
+      const raw = document.getElementById('web-cidr').value.trim();
+      let [ip, maskStr] = raw.split('/');
+      let prefix = parseInt(maskStr, 10);
+      if (isNaN(prefix) || prefix < 0 || prefix > 32) prefix = 24;
+
+      const ipParts = ip.split('.').map(Number);
+      if (ipParts.length !== 4 || ipParts.some(n => isNaN(n) || n < 0 || n > 255)) {
+        alert('Please enter a valid IPv4 address (e.g. 192.168.1.0/24)');
+        return;
+      }
+
+      const ipNum = ((ipParts[0] << 24) | (ipParts[1] << 16) | (ipParts[2] << 8) | ipParts[3]) >>> 0;
+      const maskNum = prefix === 0 ? 0 : (~0 << (32 - prefix)) >>> 0;
+      const netNum = (ipNum & maskNum) >>> 0;
+      const bcastNum = (netNum | (~maskNum >>> 0)) >>> 0;
+
+      const numToIp = (n) => [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join('.');
+
+      const total = Math.pow(2, 32 - prefix);
+      const usable = prefix >= 31 ? total : Math.max(0, total - 2);
+      const firstUsable = prefix >= 31 ? numToIp(netNum) : numToIp(netNum + 1);
+      const lastUsable = prefix >= 31 ? numToIp(bcastNum) : numToIp(bcastNum - 1);
+
+      document.getElementById('sub-netmask').innerText = numToIp(maskNum);
+      document.getElementById('sub-hosts').innerText = usable.toLocaleString();
+      document.getElementById('sub-first').innerText = firstUsable;
+      document.getElementById('sub-last').innerText = lastUsable;
+
+      const binaryStr = ipParts.map(p => p.toString(2).padStart(8, '0')).join('.');
+      document.getElementById('sub-binary').innerText = `Binary Network: ${binaryStr} (/${prefix})`;
+    }
+
+    // Connect to Local / Cloudflare NSK Node
+    let connectedNodeUrl = '';
+    async function executeNodeBridge(e) {
+      e.preventDefault();
+      let url = document.getElementById('node-url').value.trim();
+      if (url.endsWith('/')) url = url.slice(0, -1);
+
+      const btn = document.getElementById('bridge-btn');
+      const statusDiv = document.getElementById('bridge-status');
+      const actionsDiv = document.getElementById('bridge-actions');
+
+      btn.innerText = 'Connecting...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(`${url}/api/lan/info`, { mode: 'cors' });
+        const data = await res.json();
+        connectedNodeUrl = url;
+        statusDiv.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+        statusDiv.style.borderColor = '#10b981';
+        statusDiv.style.color = '#10b981';
+        statusDiv.innerHTML = `&check; <strong>Node Connected Online!</strong> Local IP: <code>${data.local_ip}</code> &bull; Subnet: <code>${data.subnet}</code> &bull; Machine: <code>${data.system_os}</code>`;
+        actionsDiv.style.display = 'block';
+      } catch (err) {
+        statusDiv.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+        statusDiv.style.borderColor = '#ef4444';
+        statusDiv.style.color = '#ef4444';
+        statusDiv.innerHTML = `Connection failed to <code>${url}</code>. Ensure NSK daemon is running or Cloudflare Tunnel is active. Error: ${err.message}`;
+        actionsDiv.style.display = 'none';
+      } finally {
+        btn.innerText = 'Bridge Connection';
+        btn.disabled = false;
+      }
+    }
+
+    async function runRemoteScan() {
+      const out = document.getElementById('remote-scan-results');
+      out.style.display = 'block';
+      out.innerText = 'Running remote async port scan through your NSK node...';
+      try {
+        const res = await fetch(`${connectedNodeUrl}/api/scan/ports`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ target: '127.0.0.1', preset: 'top20', concurrency: 50 })
+        });
+        const d = await res.json();
+        out.innerText = `Scan Complete on ${d.ip}:\n${d.open_ports.map(p => `Port ${p.port}: ${p.service} (${p.risk})`).join('\n') || 'No open ports found'}`;
+      } catch (e) {
+        out.innerText = 'Scan error: ' + e.message;
+      }
+    }
+
+    async function runRemoteLan() {
+      const out = document.getElementById('remote-scan-results');
+      out.style.display = 'block';
+      out.innerText = 'Sweeping local network through your NSK node...';
+      try {
+        const res = await fetch(`${connectedNodeUrl}/api/lan/scan`);
+        const d = await res.json();
+        out.innerText = `LAN Sweep Complete (${d.total_hosts_found} hosts found on ${d.subnet}):\n${d.hosts.map(h => `${h.ip} - ${h.hostname || h.vendor || 'Host'}`).join('\n')}`;
+      } catch (e) {
+        out.innerText = 'LAN sweep error: ' + e.message;
+      }
+    }
+
+    function openRemoteGui() {
+      if (connectedNodeUrl) {
+        window.open(connectedNodeUrl, '_blank');
+      }
+    }
+  </script>
 </body>
 </html>
+

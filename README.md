@@ -64,25 +64,17 @@ cd shiny-doodle-network-port-scanner
 pip install -r backend/requirements.txt
 ```
 
-### 3. Launch the Application
+### 3. Launch the Application (Double-Click Ready!)
 
-#### **Windows**
-Double-click `start.bat` or run:
-```powershell
-python start.py
-```
+Shiny Doodle is configured for 1-step **double-click** execution on all major platforms:
 
-#### **macOS / Linux**
-```bash
-chmod +x start.sh
-./start.sh
-```
+- 🪟 **Windows**: Double-click **`start.bat`** (or run `python start.py`).
+- 🍎 **macOS**: Double-click **`start.command`** or open **`ShinyDoodle.app`**.
+- 🐧 **Linux**: Double-click **`ShinyDoodle.desktop`** (or `./start.sh`).
+- 📱 **Android**: Run the app on your PC or server, open the displayed LAN IP in Chrome/Firefox, and tap **Add to Home screen**!
 
-#### **Android / Mobile**
-1. Run `python start.py` on your computer on the same Wi-Fi network.
-2. The launcher will output your LAN IP address (e.g., `http://192.168.1.50:8000`).
-3. Open this URL on your Android device in Chrome or Firefox.
-4. Tap **Add to Home screen** to install it as an Android Progressive Web App (PWA)!
+> **Note**: On first launch, the application automatically verifies and installs any missing Python dependencies.
+
 
 ---
 

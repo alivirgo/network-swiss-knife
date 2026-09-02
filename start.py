@@ -2,6 +2,7 @@
 """
 Shiny Doodle Network Swiss Knife 2.0 - Unified Cross-Platform Launcher
 Supports Windows, macOS, and Linux desktop environments, and serves responsive web GUI for mobile/Android.
+Automatically verifies dependencies and launches default browser.
 """
 
 import os
@@ -11,8 +12,37 @@ import webbrowser
 import time
 import socket
 
+# Ensure working directory is always the script directory (crucial for double-click)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+os.chdir(BASE_DIR)
+
+REQUIRED_PACKAGES = {
+    "fastapi": "fastapi>=0.115.0",
+    "uvicorn": "uvicorn>=0.30.0",
+    "pydantic": "pydantic>=2.8.0",
+    "dns": "dnspython>=2.6.0",
+    "psutil": "psutil>=6.0.0"
+}
+
+def ensure_dependencies():
+    missing = []
+    for mod_name, pkg_spec in REQUIRED_PACKAGES.items():
+        try:
+            __import__(mod_name)
+        except ImportError:
+            missing.append(pkg_spec)
+
+    if missing:
+        print(f"[*] First-time setup: Installing required networking components ({', '.join(missing)})...")
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", *missing])
+            print("[+] Dependencies installed successfully!\n")
+        except Exception as e:
+            print(f"[!] Warning: Could not auto-install dependencies: {e}")
+            print("[!] Please run: pip install -r backend/requirements.txt\n")
+
 def check_port_open(port: int, host: str = "127.0.0.1") -> bool:
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s = socket.socket(socket.AF_INET, socket.STREAM if hasattr(socket, "STREAM") else socket.SOCK_STREAM)
     try:
         s.settimeout(0.5)
         s.connect((host, port))
@@ -46,19 +76,17 @@ def print_banner():
 
 def main():
     print_banner()
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    backend_dir = os.path.join(base_dir, "backend")
-    static_dir = os.path.join(backend_dir, "static")
+    ensure_dependencies()
 
+    backend_dir = os.path.join(BASE_DIR, "backend")
     port = 8000
     lan_ip = get_lan_ip()
 
     print(f"[*] Starting Shiny Doodle Network Engine on port {port}...")
-    print(f"[*] Local access:       http://localhost:{port}")
+    print(f"[*] Local access:         http://localhost:{port}")
     print(f"[*] Android / LAN access: http://{lan_ip}:{port}")
-    print(f"[*] Press Ctrl+C to terminate the engine\n")
+    print(f"[*] Press Ctrl+C to stop the application\n")
 
-    # Launch browser after a brief delay
     def open_browser():
         time.sleep(1.2)
         webbrowser.open(f"http://localhost:{port}")
@@ -66,7 +94,6 @@ def main():
     import threading
     threading.Thread(target=open_browser, daemon=True).start()
 
-    # Run uvicorn
     import uvicorn
     sys.path.insert(0, backend_dir)
     uvicorn.run("main:app", host="0.0.0.0", port=port, log_level="info", app_dir=backend_dir)

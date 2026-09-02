@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Shiny Doodle Network Swiss Knife
+Comment=High-Performance Cross-Platform Networking Toolkit
+Exec=bash -c 'cd "$(dirname "%k")" && ./start.sh'
+Path=.
+Icon=network-wired
+Terminal=true
+Categories=Network;Security;System;
+StartupNotify=true

@@ -11,12 +11,14 @@ from typing import List, Optional, Dict, Any
 from core.scanner import scan_ports, PRESETS
 from core.lan_scanner import scan_lan, get_local_ip_and_subnet
 from core.ping_monitor import monitor_isp_hop, benchmark_dns_ping, ping_series
-from core.dns_tools import full_dns_lookup, check_propagation, check_malicious_dns
-from core.vpn_detector import audit_network_for_vpn, check_local_vpn_interfaces
+from core.dns_tools import full_dns_lookup, check_propagation, check_malicious_dns, audit_email_security, audit_dnssec
+from core.vpn_detector import audit_network_for_vpn, check_local_vpn_interfaces, inspect_client_device_vpn
 from core.traceroute import run_traceroute
 from core.ssl_security import analyze_ssl_certificate, analyze_http_security
-from core.subnet_calc import calculate_subnet
-from core.packet_crafter import send_custom_packet, start_echo_listener, stop_echo_listener
+from core.subnet_calc import calculate_subnet, calculate_vlsm
+from core.packet_crafter import send_custom_packet, start_echo_listener, stop_echo_listener, get_templates
+from core.speedtest import run_throughput_benchmark
+from core.wifi_inspector import get_wifi_details
 from core.advanced_tools import (
     send_wake_on_lan, check_arp_spoofing, get_network_interfaces_traffic,
     find_optimal_mtu, check_ntp_drift, discover_upnp_devices, get_active_system_sockets
@@ -98,7 +100,13 @@ async def api_dns_propagation(domain: str, type: str = "A"):
 async def api_dns_malicious_check(domain: str):
     return await check_malicious_dns(domain)
 
-from core.vpn_detector import audit_network_for_vpn, check_local_vpn_interfaces, inspect_client_device_vpn
+@app.get("/api/dns/email-security")
+async def api_dns_email_security(domain: str):
+    return await audit_email_security(domain)
+
+@app.get("/api/dns/dnssec")
+async def api_dns_dnssec(domain: str):
+    return await audit_dnssec(domain)
 
 # ----------------- VPN DETECTOR -----------------
 @app.get("/api/vpn/audit")
@@ -127,10 +135,33 @@ def api_ssl_inspect(hostname: str, port: int = 443):
 def api_http_security_headers(url: str):
     return analyze_http_security(url=url)
 
-# ----------------- SUBNET CALCULATOR -----------------
+# ----------------- SUBNET CALCULATOR & VLSM -----------------
 @app.get("/api/subnet/calculate")
 def api_subnet_calculate(cidr: str):
     return calculate_subnet(cidr=cidr)
+
+class VlsmRequest(BaseModel):
+    root_cidr: str
+    requirements: List[Dict[str, Any]]
+
+@app.post("/api/subnet/vlsm")
+def api_subnet_vlsm(req: VlsmRequest):
+    return calculate_vlsm(root_cidr=req.root_cidr, requirements=req.requirements)
+
+# ----------------- SPEEDTEST & THROUGHPUT -----------------
+@app.get("/api/speedtest/run")
+async def api_speedtest_run(duration: float = 3.0):
+    return await run_throughput_benchmark(duration_seconds=duration)
+
+# ----------------- WIFI INSPECTOR -----------------
+@app.get("/api/wifi/status")
+def api_wifi_status():
+    return get_wifi_details()
+
+# ----------------- PACKET CRAFTER -----------------
+@app.get("/api/packet/templates")
+def api_packet_templates():
+    return get_templates()
 
 # ----------------- PACKET CRAFTER -----------------
 class PacketSendRequest(BaseModel):

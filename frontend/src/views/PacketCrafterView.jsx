@@ -1,20 +1,49 @@
-import React, { useState } from 'react';
-import { Send, Radio, CheckCircle, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Send, Radio, Play, Square, FileText, CheckCircle, Copy } from 'lucide-react';
+import ProgressBar from '../components/ProgressBar';
+import { useToast } from '../components/Toast';
 
 export default function PacketCrafterView() {
   const [host, setHost] = useState('127.0.0.1');
   const [port, setPort] = useState(80);
   const [protocol, setProtocol] = useState('TCP');
   const [payloadType, setPayloadType] = useState('TEXT');
-  const [payload, setPayload] = useState('HEAD / HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n');
+  const [payload, setPayload] = useState('GET / HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n');
+  
+  const [templates, setTemplates] = useState([]);
+  const [selectedTemplate, setSelectedTemplate] = useState('');
+  
   const [sending, setSending] = useState(false);
   const [response, setResponse] = useState(null);
 
-  // Echo Listener State
-  const [listenPort, setListenPort] = useState(9999);
-  const [listenStatus, setListenStatus] = useState('Stopped');
+  // Listener state
+  const [listenerPort, setListenerPort] = useState(9999);
+  const [listenerProto, setListenerProto] = useState('TCP');
+  const [listenerRunning, setListenerRunning] = useState(false);
+  const [listenerLogs, setListenerLogs] = useState([]);
 
-  const sendPacket = async (e) => {
+  const addToast = useToast();
+
+  useEffect(() => {
+    fetch('/api/packet/templates')
+      .then(res => res.json())
+      .then(data => setTemplates(data))
+      .catch(() => {});
+  }, []);
+
+  const handleTemplateChange = (tmplId) => {
+    setSelectedTemplate(tmplId);
+    const tmpl = templates.find(t => t.id === tmplId);
+    if (tmpl) {
+      setProtocol(tmpl.protocol);
+      setPort(tmpl.default_port);
+      setPayloadType(tmpl.type);
+      setPayload(tmpl.payload);
+      addToast(`Loaded preset template: ${tmpl.name}`);
+    }
+  };
+
+  const handleSend = async (e) => {
     e.preventDefault();
     setSending(true);
     setResponse(null);
@@ -25,7 +54,7 @@ export default function PacketCrafterView() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           host,
-          port: parseInt(port),
+          port: parseInt(port, 10),
           protocol,
           payload_type: payloadType,
           payload
@@ -33,26 +62,47 @@ export default function PacketCrafterView() {
       });
       const data = await res.json();
       setResponse(data);
+      if (data.success) {
+        addToast(`Packet sent successfully (${data.bytes_sent} bytes, ${data.rtt_ms}ms)`);
+      } else {
+        addToast(data.error || 'Failed to dispatch packet', 'error');
+      }
     } catch (err) {
       setResponse({ success: false, error: err.message });
+      addToast(err.message, 'error');
     } finally {
       setSending(false);
     }
   };
 
   const toggleListener = async () => {
-    if (listenStatus === 'Running') {
-      await fetch(`/api/listener/stop?port=${listenPort}`, { method: 'POST' });
-      setListenStatus('Stopped');
+    if (listenerRunning) {
+      try {
+        await fetch(`/api/listener/stop?port=${listenerPort}`, { method: 'POST' });
+        setListenerRunning(false);
+        addToast(`Stopped echo listener on port ${listenerPort}`);
+      } catch (err) {
+        addToast(err.message, 'error');
+      }
     } else {
-      const res = await fetch(`/api/listener/start?port=${listenPort}&protocol=TCP`, { method: 'POST' });
-      const data = await res.json();
-      if (data.status === 'started' || data.status === 'already_running') {
-        setListenStatus('Running');
-      } else {
-        alert('Error starting listener: ' + data.error);
+      try {
+        const res = await fetch(`/api/listener/start?port=${listenerPort}&protocol=${listenerProto}`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          setListenerRunning(true);
+          addToast(`Listener active on 0.0.0.0:${listenerPort}`);
+        } else {
+          addToast(data.error, 'error');
+        }
+      } catch (err) {
+        addToast(err.message, 'error');
       }
     }
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    addToast('Copied payload to clipboard');
   };
 
   return (
@@ -63,18 +113,37 @@ export default function PacketCrafterView() {
           Raw Packet Crafter & Socket Dispatcher
         </div>
         <div className="card-desc">
-          Dispatch custom ASCII or Hex payloads over TCP/UDP and inspect stream replies.
+          Craft and transmit custom Layer-4 TCP/UDP frames with ASCII or Hex payloads. Test daemon responsiveness, firewall traversal, and protocol handshakes.
         </div>
 
-        <form onSubmit={sendPacket}>
-          <div className="form-row" style={{ marginBottom: 12 }}>
+        {/* Preset Templates Selector */}
+        {templates.length > 0 && (
+          <div style={{ marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <label style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600 }}>PROTOCOL TEMPLATES:</label>
+            <select
+              className="input"
+              style={{ maxWidth: 300, fontSize: 12 }}
+              value={selectedTemplate}
+              onChange={e => handleTemplateChange(e.target.value)}
+            >
+              <option value="">-- Choose Protocol Template --</option>
+              {templates.map(t => (
+                <option key={t.id} value={t.id}>{t.name} ({t.protocol}:{t.default_port})</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <form onSubmit={handleSend}>
+          <div className="form-row">
             <div style={{ flex: '1 1 200px' }}>
-              <label style={{ fontSize: 11, color: '#94a3b8', display: 'block', marginBottom: 4 }}>Destination Host / IP</label>
+              <label style={{ fontSize: 11, color: '#94a3b8', display: 'block', marginBottom: 4 }}>Target Host / IP</label>
               <input
                 className="input mono"
                 style={{ width: '100%' }}
                 value={host}
                 onChange={e => setHost(e.target.value)}
+                placeholder="127.0.0.1"
                 required
               />
             </div>
@@ -93,7 +162,12 @@ export default function PacketCrafterView() {
 
             <div style={{ flex: '0 0 100px' }}>
               <label style={{ fontSize: 11, color: '#94a3b8', display: 'block', marginBottom: 4 }}>Protocol</label>
-              <select className="input" value={protocol} onChange={e => setProtocol(e.target.value)}>
+              <select
+                className="input"
+                style={{ width: '100%' }}
+                value={protocol}
+                onChange={e => setProtocol(e.target.value)}
+              >
                 <option value="TCP">TCP</option>
                 <option value="UDP">UDP</option>
               </select>
@@ -101,97 +175,123 @@ export default function PacketCrafterView() {
 
             <div style={{ flex: '0 0 110px' }}>
               <label style={{ fontSize: 11, color: '#94a3b8', display: 'block', marginBottom: 4 }}>Encoding</label>
-              <select className="input" value={payloadType} onChange={e => setPayloadType(e.target.value)}>
-                <option value="TEXT">Plain Text / ASCII</option>
+              <select
+                className="input"
+                style={{ width: '100%' }}
+                value={payloadType}
+                onChange={e => setPayloadType(e.target.value)}
+              >
+                <option value="TEXT">ASCII / UTF-8</option>
                 <option value="HEX">Raw Hex</option>
               </select>
             </div>
           </div>
 
-          <div style={{ marginBottom: 14 }}>
-            <label style={{ fontSize: 11, color: '#94a3b8', display: 'block', marginBottom: 4 }}>Payload Data</label>
+          <div style={{ marginTop: 12 }}>
+            <label style={{ fontSize: 11, color: '#94a3b8', display: 'block', marginBottom: 4 }}>
+              Payload ({payloadType === 'HEX' ? 'e.g. 48 65 6c 6c 6f' : 'Plaintext'})
+            </label>
             <textarea
               className="input mono"
-              style={{ width: '100%', height: 75, resize: 'vertical' }}
+              style={{ width: '100%', height: 90, resize: 'vertical' }}
               value={payload}
               onChange={e => setPayload(e.target.value)}
-              placeholder="e.g. GET / HTTP/1.1 or 48656c6c6f"
+              placeholder="Payload data..."
             />
           </div>
 
-          <div>
+          <div style={{ marginTop: 12 }}>
             <button className="btn btn-primary" type="submit" disabled={sending}>
               <Send size={14} />
-              {sending ? 'Sending Packet...' : 'Transmit Packet'}
+              {sending ? 'Dispatching...' : 'Dispatch Packet'}
             </button>
           </div>
         </form>
+
+        <ProgressBar loading={sending} label={`Sending ${protocol} packet to ${host}:${port}...`} />
+
+        {response && (
+          <div style={{ marginTop: 16, borderTop: '1px solid var(--border)', paddingTop: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>
+                Transmission Result: <span className={`badge ${response.success ? 'badge-success' : 'badge-danger'}`}>
+                  {response.success ? 'SUCCESS' : 'FAILED'}
+                </span>
+              </div>
+              {response.rtt_ms !== undefined && (
+                <div className="mono" style={{ fontSize: 12, color: '#38bdf8' }}>RTT: {response.rtt_ms} ms</div>
+              )}
+            </div>
+
+            {response.error && (
+              <div style={{ padding: '8px 12px', background: 'rgba(239, 68, 68, 0.1)', color: '#f87171', borderRadius: 4, fontSize: 12 }}>
+                {response.error}
+              </div>
+            )}
+
+            {response.success && (
+              <div>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 4 }}>RECEIVED SOCKET RESPONSE:</div>
+                <div style={{
+                  backgroundColor: '#070a12',
+                  border: '1px solid #1e293b',
+                  borderRadius: 6,
+                  padding: 12,
+                  fontFamily: 'monospace',
+                  fontSize: 12,
+                  color: '#10b981',
+                  maxHeight: 180,
+                  overflowY: 'auto',
+                  whiteSpace: 'pre-wrap'
+                }}>
+                  {response.received_text || response.received_hex || '(No response data returned from remote host)'}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {response && (
-        <div className="card" style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: '#94a3b8', marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
-            <span>TRANSMISSION RESULT</span>
-            {response.latency_ms && <span className="mono">{response.latency_ms} ms</span>}
-          </div>
-
-          {response.success ? (
-            <div>
-              <div style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
-                <span className="badge badge-success">Bytes Sent: {response.bytes_sent}</span>
-                <span className="badge badge-neutral">Bytes Received: {response.bytes_received}</span>
-              </div>
-              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>SERVER RESPONSE STREAM</div>
-              <pre className="input mono" style={{ height: 'auto', minHeight: 60, whiteSpace: 'pre-wrap', color: '#cbd5e1' }}>
-                {response.response_text || '(No reply returned before timeout)'}
-              </pre>
-            </div>
-          ) : (
-            <div style={{ padding: 10, background: 'rgba(239, 68, 68, 0.1)', color: '#f87171', borderRadius: 4, fontSize: 12 }}>
-              {response.error}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Echo & Listener Diagnostic Tool */}
+      {/* On-Demand Socket Listener */}
       <div className="card">
         <div className="card-title">
           <Radio size={18} color="#38bdf8" />
-          On-Demand Inbound Echo Socket Listener
+          On-Demand TCP Echo Listener
         </div>
         <div className="card-desc">
-          Spin up a temporary local TCP listener to test port forwarding, NAT, and inbound firewall reachability from other devices.
+          Binds an ephemeral local TCP listener to verify port forwarding, router NAT, and external accessibility.
         </div>
 
-        <div className="form-row">
-          <div style={{ flex: '0 0 140px' }}>
-            <label style={{ fontSize: 11, color: '#94a3b8', display: 'block', marginBottom: 4 }}>Listening Port</label>
+        <div className="form-row" style={{ alignItems: 'center' }}>
+          <div style={{ width: 140 }}>
+            <label style={{ fontSize: 11, color: '#94a3b8', display: 'block', marginBottom: 4 }}>Listen Port</label>
             <input
               type="number"
               className="input mono"
               style={{ width: '100%' }}
-              value={listenPort}
-              onChange={e => setListenPort(e.target.value)}
-              disabled={listenStatus === 'Running'}
+              value={listenerPort}
+              onChange={e => setListenerPort(e.target.value)}
+              disabled={listenerRunning}
             />
           </div>
 
           <div style={{ paddingTop: 18 }}>
             <button
-              className={`btn ${listenStatus === 'Running' ? 'btn-danger' : 'btn-secondary'}`}
+              className={`btn ${listenerRunning ? 'btn-danger' : 'btn-secondary'}`}
               onClick={toggleListener}
             >
-              {listenStatus === 'Running' ? 'Stop Listener' : `Bind & Listen on 0.0.0.0:${listenPort}`}
+              {listenerRunning ? <Square size={14} /> : <Play size={14} />}
+              {listenerRunning ? `Stop Listener (Port ${listenerPort})` : `Start Listener on Port ${listenerPort}`}
             </button>
           </div>
-
-          <div style={{ paddingTop: 22 }}>
-            <span className={`badge ${listenStatus === 'Running' ? 'badge-success' : 'badge-neutral'}`}>
-              STATUS: {listenStatus}
-            </span>
-          </div>
         </div>
+
+        {listenerRunning && (
+          <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8, color: '#10b981', fontSize: 12 }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#10b981' }} className="spin" />
+            <span>Listening on <strong>0.0.0.0:{listenerPort}</strong> &mdash; Send TCP data to verify connectivity!</span>
+          </div>
+        )}
       </div>
     </div>
   );

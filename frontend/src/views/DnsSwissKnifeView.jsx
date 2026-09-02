@@ -1,17 +1,23 @@
 import React, { useState } from 'react';
-import { Search, Globe, CheckCircle } from 'lucide-react';
+import { Globe, Search, RefreshCw, Mail, ShieldCheck, Copy, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
+import ProgressBar from '../components/ProgressBar';
+import { useToast } from '../components/Toast';
 
 export default function DnsSwissKnifeView() {
+  const [activeTab, setActiveTab] = useState('lookup'); // 'lookup' | 'email' | 'dnssec' | 'propagation'
   const [domain, setDomain] = useState('google.com');
-  const [activeTab, setActiveTab] = useState('lookup');
-  const [propType, setPropType] = useState('A');
   const [loading, setLoading] = useState(false);
-  const [records, setRecords] = useState(null);
-  const [propagation, setPropagation] = useState(null);
   const [error, setError] = useState('');
 
-  const runQuery = async (e) => {
-    e.preventDefault();
+  const [lookupData, setLookupData] = useState(null);
+  const [emailSecData, setEmailSecData] = useState(null);
+  const [dnssecData, setDnssecData] = useState(null);
+  const [propData, setPropData] = useState([]);
+
+  const addToast = useToast();
+
+  const handleAction = async (e) => {
+    if (e) e.preventDefault();
     setLoading(true);
     setError('');
 
@@ -19,17 +25,31 @@ export default function DnsSwissKnifeView() {
       if (activeTab === 'lookup') {
         const res = await fetch(`/api/dns/lookup?domain=${encodeURIComponent(domain)}`);
         const json = await res.json();
-        setRecords(json);
-      } else {
-        const res = await fetch(`/api/dns/propagation?domain=${encodeURIComponent(domain)}&type=${propType}`);
+        setLookupData(json);
+      } else if (activeTab === 'email') {
+        const res = await fetch(`/api/dns/email-security?domain=${encodeURIComponent(domain)}`);
         const json = await res.json();
-        setPropagation(json);
+        setEmailSecData(json);
+      } else if (activeTab === 'dnssec') {
+        const res = await fetch(`/api/dns/dnssec?domain=${encodeURIComponent(domain)}`);
+        const json = await res.json();
+        setDnssecData(json);
+      } else if (activeTab === 'propagation') {
+        const res = await fetch(`/api/dns/propagation?domain=${encodeURIComponent(domain)}&type=A`);
+        const json = await res.json();
+        setPropData(json);
       }
     } catch (err) {
       setError(err.message);
+      addToast(err.message, 'error');
     } finally {
       setLoading(false);
     }
+  };
+
+  const copyToClipboard = (text, label = 'Copied') => {
+    navigator.clipboard.writeText(text);
+    addToast(`${label}: ${text}`);
   };
 
   return (
@@ -37,65 +57,55 @@ export default function DnsSwissKnifeView() {
       <div className="card">
         <div className="card-title">
           <Globe size={18} color="#38bdf8" />
-          DNS Records & Global Propagation Inspector
+          DNS Swiss Knife & Authentication Auditor
         </div>
         <div className="card-desc">
-          Query authoritative records (A, AAAA, MX, TXT, NS, SOA, CAA) and test worldwide propagation consistency.
+          Inspect DNS resource records, audit SPF/DMARC email security policies, validate cryptographic DNSSEC signatures, and track global propagation.
         </div>
 
-        {/* Tab Selector */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-          <button
-            className={`btn ${activeTab === 'lookup' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setActiveTab('lookup')}
-            type="button"
-          >
-            All Record Types
-          </button>
-          <button
-            className={`btn ${activeTab === 'propagation' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setActiveTab('propagation')}
-            type="button"
-          >
-            Global Propagation
-          </button>
+        {/* Tab Selection */}
+        <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
+          {[
+            { id: 'lookup', label: 'Record Inspector' },
+            { id: 'email', label: 'Email Security (SPF / DMARC)' },
+            { id: 'dnssec', label: 'DNSSEC Validation' },
+            { id: 'propagation', label: 'Worldwide Propagation' }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              className={`btn ${activeTab === tab.id ? 'btn-primary' : 'btn-secondary'}`}
+              style={{ padding: '4px 12px', fontSize: 12 }}
+              onClick={() => { setActiveTab(tab.id); }}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
-        <form onSubmit={runQuery}>
+        <form onSubmit={handleAction}>
           <div className="form-row">
-            <div style={{ flex: '1 1 240px' }}>
-              <label style={{ fontSize: 11, color: '#94a3b8', display: 'block', marginBottom: 4 }}>Domain Name</label>
+            <div style={{ flex: '1 1 260px' }}>
+              <label style={{ fontSize: 11, color: '#94a3b8', display: 'block', marginBottom: 4 }}>Target Domain Name</label>
               <input
                 className="input mono"
                 style={{ width: '100%' }}
                 value={domain}
                 onChange={e => setDomain(e.target.value)}
-                placeholder="e.g. cloudflare.com"
+                placeholder="e.g. google.com or github.com"
                 required
               />
             </div>
 
-            {activeTab === 'propagation' && (
-              <div style={{ flex: '0 0 100px' }}>
-                <label style={{ fontSize: 11, color: '#94a3b8', display: 'block', marginBottom: 4 }}>Record</label>
-                <select className="input" value={propType} onChange={e => setPropType(e.target.value)}>
-                  <option value="A">A</option>
-                  <option value="AAAA">AAAA</option>
-                  <option value="MX">MX</option>
-                  <option value="TXT">TXT</option>
-                  <option value="NS">NS</option>
-                </select>
-              </div>
-            )}
-
             <div style={{ paddingTop: 18 }}>
               <button className="btn btn-primary" type="submit" disabled={loading}>
                 <Search size={14} />
-                {loading ? 'Querying...' : (activeTab === 'lookup' ? 'Query All Records' : 'Check Worldwide')}
+                {loading ? 'Querying Resolvers...' : 'Run Query'}
               </button>
             </div>
           </div>
         </form>
+
+        <ProgressBar loading={loading} label={`Executing ${activeTab} check on ${domain}...`} />
 
         {error && (
           <div style={{ padding: '8px 12px', background: 'rgba(239, 68, 68, 0.1)', color: '#f87171', borderRadius: 4, fontSize: 12, marginTop: 10 }}>
@@ -104,77 +114,147 @@ export default function DnsSwissKnifeView() {
         )}
       </div>
 
-      {activeTab === 'lookup' && records && (
-        <div>
-          <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600, marginBottom: 8 }}>
-            RESOLVED DNS RECORDS FOR {records.domain.toUpperCase()}
-          </div>
-          <div className="data-table-container">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th style={{ width: 90 }}>Record Type</th>
-                  <th>Answers / Target Values</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(records.records).map(([type, vals]) => (
+      {/* Tab 1: Record Inspector */}
+      {activeTab === 'lookup' && lookupData && (
+        <div className="data-table-container">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Record Type</th>
+                <th>Resolved Values</th>
+                <th>Copy</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(lookupData.records).map(([type, vals]) => {
+                if (!vals || vals.length === 0) return null;
+                return (
                   <tr key={type}>
-                    <td className="mono" style={{ fontWeight: 600, color: '#38bdf8' }}>{type}</td>
+                    <td className="mono" style={{ fontWeight: 700, color: '#38bdf8' }}>{type}</td>
                     <td className="mono" style={{ fontSize: 12 }}>
-                      {vals.length > 0 ? (
-                        vals.map((v, i) => (
-                          <div key={i} style={{ marginBottom: 2 }}>{v}</div>
-                        ))
-                      ) : (
-                        <span style={{ color: '#475569' }}>None</span>
-                      )}
+                      {vals.map((v, i) => (
+                        <div key={i} style={{ marginBottom: vals.length > 1 ? 4 : 0 }}>{v}</div>
+                      ))}
+                    </td>
+                    <td>
+                      <button
+                        className="btn btn-secondary"
+                        style={{ padding: '2px 6px', fontSize: 11 }}
+                        onClick={() => copyToClipboard(vals.join('\n'), `${type} records`)}
+                      >
+                        <Copy size={11} />
+                      </button>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Tab 2: Email Security (SPF / DMARC) */}
+      {activeTab === 'email' && emailSecData && (
+        <div>
+          <div className="metrics-row">
+            <div className="metric-box">
+              <div className="metric-label">Security Health Grade</div>
+              <div className="metric-val">
+                <span className={`badge ${['A+', 'A'].includes(emailSecData.grade) ? 'badge-success' : 'badge-warning'}`} style={{ fontSize: 16 }}>
+                  Grade {emailSecData.grade} ({emailSecData.score}/100)
+                </span>
+              </div>
+            </div>
+
+            <div className="metric-box">
+              <div className="metric-label">SPF Policy Status</div>
+              <div className="metric-val">
+                <span className={`badge ${emailSecData.spf.status === 'CONFIGURED' ? 'badge-success' : 'badge-danger'}`}>
+                  {emailSecData.spf.strictness}
+                </span>
+              </div>
+            </div>
+
+            <div className="metric-box">
+              <div className="metric-label">DMARC Policy Enforcement</div>
+              <div className="metric-val">
+                <span className={`badge ${emailSecData.dmarc.policy === 'REJECT' ? 'badge-success' : (emailSecData.dmarc.policy === 'QUARANTINE' ? 'badge-warning' : 'badge-danger')}`}>
+                  {emailSecData.dmarc.policy}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="card">
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>SPF Record:</div>
+            <div className="mono" style={{ backgroundColor: '#070a12', padding: 10, borderRadius: 4, fontSize: 12, color: '#38bdf8' }}>
+              {emailSecData.spf.record}
+            </div>
+
+            <div style={{ fontSize: 13, fontWeight: 600, marginTop: 12, marginBottom: 6 }}>DMARC Record:</div>
+            <div className="mono" style={{ backgroundColor: '#070a12', padding: 10, borderRadius: 4, fontSize: 12, color: '#10b981' }}>
+              {emailSecData.dmarc.record}
+            </div>
           </div>
         </div>
       )}
 
-      {activeTab === 'propagation' && propagation && (
-        <div>
-          <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600, marginBottom: 8 }}>
-            WORLDWIDE DNS RESOLVER REPLIES ({propType} RECORD)
+      {/* Tab 3: DNSSEC */}
+      {activeTab === 'dnssec' && dnssecData && (
+        <div className="card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <div style={{ fontSize: 14, fontWeight: 600 }}>DNSSEC Signing Status:</div>
+            <span className={`badge ${dnssecData.dnssec_enabled ? 'badge-success' : 'badge-warning'}`} style={{ fontSize: 13, padding: '4px 10px' }}>
+              {dnssecData.status}
+            </span>
           </div>
-          <div className="data-table-container">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Resolver</th>
-                  <th>IP</th>
-                  <th>Region</th>
-                  <th>Returned Value</th>
-                  <th>Latency</th>
-                  <th>Status</th>
+
+          <div className="metrics-row">
+            <div className="metric-box">
+              <div className="metric-label">DNSKEY Records</div>
+              <div className="metric-val mono">{dnssecData.dnskey_count}</div>
+            </div>
+            <div className="metric-box">
+              <div className="metric-label">RRSIG Signatures</div>
+              <div className="metric-val mono">{dnssecData.rrsig_count}</div>
+            </div>
+            <div className="metric-box">
+              <div className="metric-label">DS Delegation Records</div>
+              <div className="metric-val mono">{dnssecData.ds_count}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 4: Global Propagation */}
+      {activeTab === 'propagation' && propData.length > 0 && (
+        <div className="data-table-container">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Resolver Provider</th>
+                <th>Location</th>
+                <th>Resolved IP(s)</th>
+                <th>Latency</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {propData.map((r, idx) => (
+                <tr key={idx}>
+                  <td style={{ fontWeight: 600 }}>{r.name}</td>
+                  <td style={{ color: '#64748b' }}>{r.location}</td>
+                  <td className="mono" style={{ color: '#38bdf8' }}>{r.records.join(', ') || 'None'}</td>
+                  <td className="mono">{r.latency_ms} ms</td>
+                  <td>
+                    <span className={`badge ${r.status === 'resolved' ? 'badge-success' : 'badge-danger'}`}>
+                      {r.status.toUpperCase()}
+                    </span>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {propagation.map((r) => (
-                  <tr key={r.ip}>
-                    <td style={{ fontWeight: 500, color: '#f1f5f9' }}>{r.name}</td>
-                    <td className="mono">{r.ip}</td>
-                    <td style={{ color: '#94a3b8' }}>{r.location}</td>
-                    <td className="mono" style={{ fontSize: 12 }}>
-                      {r.records.length > 0 ? r.records.join(', ') : <span style={{ color: '#64748b' }}>No record</span>}
-                    </td>
-                    <td className="mono">{r.latency_ms} ms</td>
-                    <td>
-                      <span className={`badge ${r.records.length > 0 ? 'badge-success' : 'badge-neutral'}`}>
-                        {r.records.length > 0 ? 'RESOLVED' : 'NONE'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

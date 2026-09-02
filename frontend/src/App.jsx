@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Shield, Network, Activity, Globe, ShieldAlert, Eye, Navigation,
-  Lock, Calculator, Send, Wrench, BookOpen, FileText, Menu, X
+  Lock, Calculator, Send, Wrench, BookOpen, FileText, Menu, X,
+  Gauge, Wifi, Search, Terminal
 } from 'lucide-react';
 
 import PortScannerView from './views/PortScannerView';
@@ -18,6 +19,11 @@ import PacketCrafterView from './views/PacketCrafterView';
 import AdvancedToolsView from './views/AdvancedToolsView';
 import PortDirectoryView from './views/PortDirectoryView';
 import ExportReportView from './views/ExportReportView';
+import BandwidthSpeedView from './views/BandwidthSpeedView';
+import WifiInterfacesView from './views/WifiInterfacesView';
+
+import { ToastProvider, useToast } from './components/Toast';
+import CommandPalette from './components/CommandPalette';
 
 const NAV_SECTIONS = [
   {
@@ -34,7 +40,9 @@ const NAV_SECTIONS = [
       { id: 'isp', label: 'ISP Ping Monitor', icon: Activity },
       { id: 'dns-ping', label: 'DNS Ping Benchmark', icon: Globe },
       { id: 'malicious-dns', label: 'Malicious DNS Check', icon: ShieldAlert },
-      { id: 'traceroute', label: 'Visual Traceroute', icon: Navigation }
+      { id: 'traceroute', label: 'Visual Traceroute', icon: Navigation },
+      { id: 'speedtest', label: 'Bandwidth Speedtest', icon: Gauge },
+      { id: 'wifi', label: 'Wi-Fi & Interfaces', icon: Wifi }
     ]
   },
   {
@@ -42,7 +50,7 @@ const NAV_SECTIONS = [
     items: [
       { id: 'dns-records', label: 'DNS Swiss Knife', icon: Globe },
       { id: 'ssl-http', label: 'SSL & HTTP Security', icon: Lock },
-      { id: 'subnet', label: 'Subnet & CIDR Calc', icon: Calculator }
+      { id: 'subnet', label: 'Subnet & VLSM Calc', icon: Calculator }
     ]
   },
   {
@@ -56,12 +64,28 @@ const NAV_SECTIONS = [
   }
 ];
 
-export default function App() {
+const ALL_TOOLS = NAV_SECTIONS.flatMap(s => s.items.map(i => ({ ...i, category: s.category })));
+
+function MainApp() {
   const [activeTab, setActiveTab] = useState('ports');
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [online, setOnline] = useState(true);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
-  // Close sidebar on mobile when switching tabs
+  // Global Keyboard Shortcuts (Ctrl+K or /)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setCommandPaletteOpen(prev => !prev);
+      } else if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+        e.preventDefault();
+        setCommandPaletteOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const handleNavClick = (id) => {
     setActiveTab(id);
     setSidebarOpen(false);
@@ -76,6 +100,8 @@ export default function App() {
       case 'dns-ping': return <DnsMonitorView />;
       case 'malicious-dns': return <MaliciousDnsView />;
       case 'traceroute': return <TracerouteView />;
+      case 'speedtest': return <BandwidthSpeedView />;
+      case 'wifi': return <WifiInterfacesView />;
       case 'dns-records': return <DnsSwissKnifeView />;
       case 'ssl-http': return <SslSecurityView />;
       case 'subnet': return <SubnetCalculatorView />;
@@ -87,17 +113,25 @@ export default function App() {
     }
   };
 
-  const activeItem = NAV_SECTIONS.flatMap(s => s.items).find(i => i.id === activeTab);
+  const activeItem = ALL_TOOLS.find(i => i.id === activeTab);
 
   return (
     <div className="app-container">
+      {/* Command Palette Modal */}
+      <CommandPalette
+        isOpen={commandPaletteOpen}
+        onClose={() => setCommandPaletteOpen(false)}
+        onSelectTool={(id) => setActiveTab(id)}
+        tools={ALL_TOOLS}
+      />
+
       {/* Sidebar Navigation */}
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <Shield size={20} color="#38bdf8" />
           <div style={{ flex: 1 }}>
             <div className="app-title">Network Swiss Knife</div>
-            <div style={{ fontSize: 11, color: '#64748b' }}>NSK Toolkit</div>
+            <div style={{ fontSize: 11, color: '#64748b' }}>NSK Toolkit 2.5</div>
           </div>
           <span className="app-badge">NSK</span>
           {sidebarOpen && (
@@ -132,15 +166,14 @@ export default function App() {
           ))}
         </div>
 
-        {/* Sidebar Footer */}
         <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', fontSize: 11, color: '#64748b' }}>
-          Cross-Platform &bull; Windows &bull; Mac &bull; Linux &bull; Android
+          Windows &bull; Mac &bull; Linux &bull; Android
         </div>
       </aside>
 
       {/* Main Workspace */}
       <div className="main-content">
-        {/* Top bar */}
+        {/* Topbar with Quick Search Button */}
         <header className="topbar">
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <button className="mobile-menu-btn" onClick={() => setSidebarOpen(true)}>
@@ -151,7 +184,29 @@ export default function App() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {/* Quick Command Palette Button */}
+            <button
+              onClick={() => setCommandPaletteOpen(true)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                backgroundColor: '#1e293b',
+                border: '1px solid #334155',
+                borderRadius: 6,
+                padding: '4px 10px',
+                color: '#94a3b8',
+                fontSize: 12,
+                cursor: 'pointer'
+              }}
+              title="Open Command Palette (Ctrl+K or /)"
+            >
+              <Search size={13} color="#64748b" />
+              <span>Search tools...</span>
+              <kbd style={{ backgroundColor: '#0f172a', padding: '1px 5px', borderRadius: 3, fontSize: 10, color: '#38bdf8' }}>Ctrl K</kbd>
+            </button>
+
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#10b981' }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#10b981', display: 'inline-block' }} />
               <span className="mono" style={{ fontSize: 11 }}>ENGINE READY</span>
@@ -165,5 +220,13 @@ export default function App() {
         </main>
       </div>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <ToastProvider>
+      <MainApp />
+    </ToastProvider>
   );
 }

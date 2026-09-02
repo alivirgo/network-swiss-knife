@@ -1,16 +1,24 @@
 import React, { useState } from 'react';
-import { Play, Shield, AlertTriangle, CheckCircle, Download } from 'lucide-react';
+import { Play, Shield, AlertTriangle, CheckCircle, Download, Search, Copy, Check } from 'lucide-react';
 import ProgressBar from '../components/ProgressBar';
+import PortMatrix from '../components/PortMatrix';
+import { useToast } from '../components/Toast';
 
 export default function PortScannerView() {
   const [target, setTarget] = useState('127.0.0.1');
   const [preset, setPreset] = useState('top20');
-  const [customRange, setCustomRange] = useState('1-1024');
-  const [concurrency, setConcurrency] = useState(150);
+  const [customRange, setCustomRange] = useState('80-443');
+  const [concurrency, setConcurrency] = useState(100);
+  const [timeoutMs, setTimeoutMs] = useState(600);
   const [grabBanners, setGrabBanners] = useState(true);
+
   const [scanning, setScanning] = useState(false);
   const [results, setResults] = useState(null);
   const [error, setError] = useState('');
+  const [filterText, setFilterText] = useState('');
+  const [riskFilter, setRiskFilter] = useState('all');
+
+  const addToast = useToast();
 
   const handleScan = async (e) => {
     e.preventDefault();
@@ -18,80 +26,62 @@ export default function PortScannerView() {
     setError('');
     setResults(null);
 
-    let payload = {
-      target,
-      concurrency: parseInt(concurrency),
-      timeout: 1.0,
-      grab_banners: grabBanners
-    };
-
-    if (preset === 'custom') {
-      try {
-        const parts = customRange.split('-');
-        const start = parseInt(parts[0]);
-        const end = parseInt(parts[1] || parts[0]);
-        const portList = [];
-        for (let i = start; i <= Math.min(end, start + 2000); i++) {
-          portList.push(i);
-        }
-        payload.ports = portList;
-      } catch (err) {
-        setError('Invalid custom port range. Example: 20-100');
-        setScanning(false);
-        return;
-      }
-    } else {
-      payload.preset = preset;
-    }
-
     try {
       const res = await fetch('/api/scan/ports', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          target,
+          preset,
+          custom_range: preset === 'custom' ? customRange : null,
+          concurrency: parseInt(concurrency, 10),
+          timeout: timeoutMs / 1000,
+          grab_banner: grabBanners
+        })
       });
+
       const data = await res.json();
       if (data.error) {
         setError(data.error);
+        addToast(data.error, 'error');
       } else {
         setResults(data);
+        addToast(`Scan complete: ${data.open_ports_count} open ports found on ${data.ip}`);
       }
     } catch (err) {
-      setError('Connection error to scanner engine: ' + err.message);
+      setError(err.message);
+      addToast(err.message, 'error');
     } finally {
       setScanning(false);
     }
   };
 
-  const exportCSV = () => {
-    if (!results || !results.results.length) return;
-    const headers = ['Port', 'Protocol', 'Service', 'Risk', 'Latency (ms)', 'Banner'];
-    const rows = results.results.map(r => [
-      r.port, r.protocol, `"${r.service}"`, r.risk, r.latency_ms, `"${(r.banner || '').replace(/"/g, '""')}"`
-    ]);
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `port_scan_${target}_${Date.now()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const copyToClipboard = (text, label = 'Copied') => {
+    navigator.clipboard.writeText(text);
+    addToast(`${label}: ${text}`);
   };
+
+  const filteredPorts = (results?.open_ports || []).filter((p) => {
+    const matchText = p.service.toLowerCase().includes(filterText.toLowerCase()) ||
+                      p.port.toString().includes(filterText) ||
+                      (p.banner && p.banner.toLowerCase().includes(filterText.toLowerCase()));
+    const matchRisk = riskFilter === 'all' || p.risk.toLowerCase() === riskFilter.toLowerCase();
+    return matchText && matchRisk;
+  });
 
   return (
     <div>
       <div className="card">
         <div className="card-title">
           <Shield size={18} color="#38bdf8" />
-          Port Scanner & Service Detection
+          High-Speed Async Port Scanner & Service Detective
         </div>
         <div className="card-desc">
-          Async socket connect scanner with service banner inspection and risk categorization.
+          High-throughput non-blocking TCP socket scanner with concurrency scaling, service banner extraction, and vulnerability risk ratings.
         </div>
 
         <form onSubmit={handleScan}>
-          <div className="form-row" style={{ marginBottom: 12 }}>
+          <div className="form-row">
             <div style={{ flex: '1 1 200px' }}>
               <label style={{ fontSize: 11, color: '#94a3b8', display: 'block', marginBottom: 4 }}>Target Host / IP</label>
               <input
@@ -129,7 +119,7 @@ export default function PortScannerView() {
                   style={{ width: '100%' }}
                   value={customRange}
                   onChange={e => setCustomRange(e.target.value)}
-                  placeholder="1-1024"
+                  placeholder="80-1000"
                 />
               </div>
             )}
@@ -147,7 +137,21 @@ export default function PortScannerView() {
               />
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingTop: 18 }}>
+            <div style={{ flex: '1 1 100px' }}>
+              <label style={{ fontSize: 11, color: '#94a3b8', display: 'block', marginBottom: 4 }}>Timeout (ms)</label>
+              <input
+                type="number"
+                className="input mono"
+                style={{ width: '100%' }}
+                value={timeoutMs}
+                onChange={e => setTimeoutMs(e.target.value)}
+                min="100"
+                max="3000"
+                step="50"
+              />
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingTop: 20 }}>
               <input
                 type="checkbox"
                 id="grabBanners"
@@ -177,34 +181,67 @@ export default function PortScannerView() {
 
       {results && (
         <div>
+          {/* Live Port Matrix */}
+          <PortMatrix
+            scannedCount={results.total_scanned}
+            openPorts={results.open_ports}
+          />
+
           <div className="metrics-row">
             <div className="metric-box">
               <div className="metric-label">Target Resolved</div>
-              <div className="metric-val mono" style={{ fontSize: 16 }}>{results.ip}</div>
+              <div
+                className="metric-val mono"
+                style={{ fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+                onClick={() => copyToClipboard(results.ip, 'IP')}
+                title="Click to copy IP"
+              >
+                {results.ip} <Copy size={13} color="#64748b" />
+              </div>
             </div>
-            <div className="metric-box">
-              <div className="metric-label">Scanned Ports</div>
-              <div className="metric-val">{results.scanned_ports_count}</div>
-            </div>
+
             <div className="metric-box">
               <div className="metric-label">Open Ports</div>
-              <div className="metric-val" style={{ color: results.open_ports_count > 0 ? '#38bdf8' : '#94a3b8' }}>
+              <div className="metric-val" style={{ color: results.open_ports_count > 0 ? '#38bdf8' : '#64748b' }}>
                 {results.open_ports_count}
               </div>
             </div>
+
+            <div className="metric-box">
+              <div className="metric-label">Total Ports Scanned</div>
+              <div className="metric-val mono">{results.total_scanned}</div>
+            </div>
+
             <div className="metric-box">
               <div className="metric-label">Scan Duration</div>
-              <div className="metric-val mono" style={{ fontSize: 16 }}>{results.scan_time_seconds}s</div>
+              <div className="metric-val mono">{results.duration_seconds}s</div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600 }}>DISCOVERED SERVICES</span>
-            {results.results.length > 0 && (
-              <button className="btn btn-secondary" onClick={exportCSV} style={{ padding: '4px 10px', fontSize: 11 }}>
-                <Download size={12} /> Export CSV
-              </button>
-            )}
+          {/* Search and Risk Filter Bar */}
+          <div style={{ display: 'flex', gap: 10, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ flex: '1 1 200px', position: 'relative' }}>
+              <input
+                className="input"
+                style={{ width: '100%', paddingLeft: 28 }}
+                value={filterText}
+                onChange={e => setFilterText(e.target.value)}
+                placeholder="Filter by service name or port..."
+              />
+              <Search size={14} color="#64748b" style={{ position: 'absolute', left: 8, top: 10 }} />
+            </div>
+
+            <select
+              className="input"
+              value={riskFilter}
+              onChange={e => setRiskFilter(e.target.value)}
+            >
+              <option value="all">All Risk Levels</option>
+              <option value="critical">Critical Only</option>
+              <option value="high">High Only</option>
+              <option value="medium">Medium Only</option>
+              <option value="low">Low Only</option>
+            </select>
           </div>
 
           <div className="data-table-container">
@@ -212,34 +249,47 @@ export default function PortScannerView() {
               <thead>
                 <tr>
                   <th>Port</th>
-                  <th>Protocol</th>
                   <th>Service</th>
                   <th>Risk Rating</th>
-                  <th>Latency</th>
-                  <th>Service Banner / Response</th>
+                  <th>Extracted Banner / Fingerprint</th>
+                  <th>Response Time</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
-                {results.results.length === 0 ? (
+                {filteredPorts.length === 0 ? (
                   <tr>
                     <td colSpan={6} style={{ textAlign: 'center', padding: 24, color: '#64748b' }}>
-                      No open ports detected in the scanned range.
+                      {results.open_ports_count === 0 ? 'No open ports identified on target host.' : 'No open ports match the current filter.'}
                     </td>
                   </tr>
                 ) : (
-                  results.results.map((r) => (
-                    <tr key={r.port}>
-                      <td className="mono" style={{ fontWeight: 600, color: '#f1f5f9' }}>{r.port}</td>
-                      <td className="mono">{r.protocol}</td>
-                      <td style={{ color: '#38bdf8', fontWeight: 500 }}>{r.service}</td>
+                  filteredPorts.map((p) => (
+                    <tr key={p.port}>
+                      <td className="mono" style={{ fontWeight: 600, color: '#38bdf8' }}>{p.port}</td>
+                      <td style={{ fontWeight: 500 }}>{p.service}</td>
                       <td>
-                        <span className={`badge ${r.risk === 'HIGH' ? 'badge-danger' : (r.risk === 'MEDIUM' ? 'badge-warning' : 'badge-neutral')}`}>
-                          {r.risk}
+                        <span className={`badge ${
+                          p.risk === 'CRITICAL' ? 'badge-danger' :
+                          p.risk === 'HIGH' ? 'badge-warning' :
+                          p.risk === 'MEDIUM' ? 'badge-warning' : 'badge-neutral'
+                        }`}>
+                          {p.risk}
                         </span>
                       </td>
-                      <td className="mono">{r.latency_ms} ms</td>
-                      <td className="mono" style={{ fontSize: 12, color: '#cbd5e1' }}>
-                        {r.banner || <span style={{ color: '#475569' }}>None</span>}
+                      <td className="mono" style={{ fontSize: 11, color: p.banner ? '#f1f5f9' : '#64748b', maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {p.banner || 'None returned'}
+                      </td>
+                      <td className="mono">{p.response_ms} ms</td>
+                      <td>
+                        <button
+                          className="btn btn-secondary"
+                          style={{ padding: '3px 8px', fontSize: 11 }}
+                          onClick={() => copyToClipboard(`${results.ip}:${p.port}`, 'Target Address')}
+                          title="Copy IP:Port"
+                        >
+                          <Copy size={11} /> Copy
+                        </button>
                       </td>
                     </tr>
                   ))

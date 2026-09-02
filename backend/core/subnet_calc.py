@@ -1,10 +1,10 @@
 import ipaddress
+import math
 from typing import Dict, Any, List
 
 def calculate_subnet(cidr: str) -> Dict[str, Any]:
     cidr = cidr.strip()
     try:
-        # Support both single IP or network CIDR
         if "/" not in cidr:
             cidr += "/24"
         
@@ -26,7 +26,7 @@ def calculate_subnet(cidr: str) -> Dict[str, Any]:
             octets = [f"{int(o):08b}" for o in net_address.split(".")]
             binary_net = ".".join(octets)
 
-            # Determine IPv4 class
+            # Class
             first_octet = int(net_address.split(".")[0])
             if first_octet < 128:
                 ip_class = "A"
@@ -39,7 +39,7 @@ def calculate_subnet(cidr: str) -> Dict[str, Any]:
             else:
                 ip_class = "E (Experimental)"
 
-            # Subnet splitting preview (e.g. next smaller prefix)
+            # Subnet splitting preview
             subnets_split = []
             if net.prefixlen < 30:
                 subnets_split = [str(s) for s in list(net.subnets(prefixlen_diff=1))[:4]]
@@ -80,3 +80,80 @@ def calculate_subnet(cidr: str) -> Dict[str, Any]:
             "valid": False,
             "error": f"Invalid IP/CIDR representation: {str(e)}"
         }
+
+def calculate_vlsm(root_cidr: str, requirements: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Computes Variable Length Subnet Masking (VLSM) optimal allocation.
+    requirements: [{"name": "Department", "hosts": int}]
+    """
+    try:
+        base_net = ipaddress.ip_network(root_cidr, strict=False)
+        if not isinstance(base_net, ipaddress.IPv4Network):
+            return {"valid": False, "error": "VLSM planner currently supports IPv4 networks"}
+
+        # Sort requirements descending by required host count
+        sorted_reqs = sorted(requirements, key=lambda x: x.get("hosts", 0), reverse=True)
+        allocated = []
+        current_ip = int(base_net.network_address)
+        max_ip = int(base_net.broadcast_address)
+        total_used_addresses = 0
+
+        for req in sorted_reqs:
+            name = req.get("name", "Subnet")
+            needed_hosts = req.get("hosts", 1)
+            
+            # Find required prefix: 2^(32 - prefix) - 2 >= needed_hosts
+            # needed total = needed_hosts + 2 (network + broadcast)
+            needed_total = needed_hosts + 2
+            host_bits = math.ceil(math.log2(needed_total))
+            host_bits = max(2, min(30, host_bits)) # minimum /30 (2 usable hosts)
+            prefix = 32 - host_bits
+            block_size = 2 ** host_bits
+
+            # Align current_ip to block boundary
+            if current_ip % block_size != 0:
+                current_ip += (block_size - (current_ip % block_size))
+
+            subnet_end = current_ip + block_size - 1
+            if subnet_end > max_ip:
+                allocated.append({
+                    "name": name,
+                    "needed_hosts": needed_hosts,
+                    "status": "OVERFLOW",
+                    "error": "Root network has insufficient address space"
+                })
+                continue
+
+            sub_net = ipaddress.IPv4Network((current_ip, prefix))
+            usable_count = max(0, sub_net.num_addresses - 2)
+            first_host = str(sub_net.network_address + 1)
+            last_host = str(sub_net.broadcast_address - 1)
+
+            allocated.append({
+                "name": name,
+                "needed_hosts": needed_hosts,
+                "allocated_hosts": usable_count,
+                "cidr": str(sub_net),
+                "prefix": prefix,
+                "netmask": str(sub_net.netmask),
+                "network_address": str(sub_net.network_address),
+                "broadcast_address": str(sub_net.broadcast_address),
+                "usable_range": f"{first_host} - {last_host}",
+                "status": "ALLOCATED"
+            })
+
+            total_used_addresses += block_size
+            current_ip += block_size
+
+        utilization_pct = round((total_used_addresses / base_net.num_addresses) * 100, 1)
+
+        return {
+            "valid": True,
+            "root_cidr": str(base_net),
+            "root_total_addresses": base_net.num_addresses,
+            "allocated_addresses": total_used_addresses,
+            "utilization_pct": min(100.0, utilization_pct),
+            "allocated_subnets": allocated
+        }
+    except Exception as e:
+        return {"valid": False, "error": f"VLSM error: {str(e)}"}

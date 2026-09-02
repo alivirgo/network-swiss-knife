@@ -6,6 +6,69 @@ from typing import Dict, Any, Optional
 
 ACTIVE_LISTENERS: Dict[int, Any] = {}
 
+PROTOCOL_TEMPLATES = [
+    {
+        "id": "http_get",
+        "name": "HTTP GET Request",
+        "protocol": "TCP",
+        "default_port": 80,
+        "type": "TEXT",
+        "payload": "GET / HTTP/1.1\r\nHost: 127.0.0.1\r\nUser-Agent: NSK/2.5\r\nConnection: close\r\n\r\n"
+    },
+    {
+        "id": "dns_query",
+        "name": "DNS A-Record Query (google.com)",
+        "protocol": "UDP",
+        "default_port": 53,
+        "type": "HEX",
+        "payload": "aa bb 01 00 00 01 00 00 00 00 00 00 06 67 6f 6f 67 6c 65 03 63 6f 6d 00 00 01 00 01"
+    },
+    {
+        "id": "ntp_req",
+        "name": "NTP Client Time Request",
+        "protocol": "UDP",
+        "default_port": 123,
+        "type": "HEX",
+        "payload": "1b 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00"
+    },
+    {
+        "id": "ssdp_discover",
+        "name": "SSDP UPnP Discovery",
+        "protocol": "UDP",
+        "default_port": 1900,
+        "type": "TEXT",
+        "payload": "M-SEARCH * HTTP/1.1\r\nHOST: 239.255.255.250:1900\r\nMAN: \"ssdp:discover\"\r\nMX: 2\r\nST: ssdp:all\r\n\r\n"
+    },
+    {
+        "id": "redis_ping",
+        "name": "Redis PING (RESP)",
+        "protocol": "TCP",
+        "default_port": 6379,
+        "type": "TEXT",
+        "payload": "*1\r\n$4\r\nPING\r\n"
+    },
+    {
+        "id": "memcached_stats",
+        "name": "Memcached Stats Query",
+        "protocol": "TCP",
+        "default_port": 11211,
+        "type": "TEXT",
+        "payload": "stats\r\n"
+    },
+    {
+        "id": "smtp_helo",
+        "name": "SMTP Handshake (HELO)",
+        "protocol": "TCP",
+        "default_port": 25,
+        "type": "TEXT",
+        "payload": "HELO nsk.network\r\n"
+    }
+]
+
+def get_templates() -> list:
+    return PROTOCOL_TEMPLATES
+
+
 async def send_custom_packet(
     host: str,
     port: int,

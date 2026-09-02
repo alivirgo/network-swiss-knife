@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Network, RefreshCw, Server, Laptop, Router, Download } from 'lucide-react';
+import { Network, RefreshCw, Server, Laptop, Router, Smartphone, Radio, Copy, Search, Shield } from 'lucide-react';
 import ProgressBar from '../components/ProgressBar';
+import TopologyMap from '../components/TopologyMap';
+import { useToast } from '../components/Toast';
 
 export default function LanDiscoveryView() {
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState(null);
+  const [lanData, setLanData] = useState(null);
   const [cidr, setCidr] = useState('');
   const [error, setError] = useState('');
+  const [filterType, setFilterType] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const addToast = useToast();
 
   const fetchLan = async (e) => {
     if (e) e.preventDefault();
@@ -16,59 +22,62 @@ export default function LanDiscoveryView() {
     try {
       const url = cidr ? `/api/lan/scan?cidr=${encodeURIComponent(cidr)}` : '/api/lan/scan';
       const res = await fetch(url);
-      const json = await res.json();
-      if (json.error) {
-        setError(json.error);
+      const data = await res.json();
+      if (data.error) {
+        setError(data.error);
+        addToast(data.error, 'error');
       } else {
-        setData(json);
+        setLanData(data);
+        addToast(`Discovered ${data.total_hosts_found} online network devices`);
       }
     } catch (err) {
       setError(err.message);
+      addToast(err.message, 'error');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetch('/api/lan/info')
-      .then(r => r.json())
-      .then(info => {
-        if (info.default_subnet) setCidr(info.default_subnet);
-      })
-      .catch(() => {});
+    fetchLan();
   }, []);
 
-  const exportCSV = () => {
-    if (!data || !data.hosts.length) return;
-    const headers = ['IP', 'Hostname', 'MAC', 'Vendor', 'Device Type', 'Latency (ms)'];
-    const rows = data.hosts.map(h => [
-      h.ip, `"${h.hostname}"`, h.mac, `"${h.vendor}"`, `"${h.device_type}"`, h.latency_ms
-    ]);
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `lan_hosts_${Date.now()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const copyToClipboard = (text, label = 'Copied') => {
+    navigator.clipboard.writeText(text);
+    addToast(`${label}: ${text}`);
   };
+
+  const hosts = lanData?.hosts || [];
+
+  const filteredHosts = hosts.filter((h) => {
+    const matchesSearch = h.ip.includes(searchQuery) ||
+                          h.mac.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          (h.hostname && h.hostname.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                          (h.vendor && h.vendor.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    if (filterType === 'all') return matchesSearch;
+    if (filterType === 'gateway') return matchesSearch && h.is_gateway;
+    if (filterType === 'mobile') return matchesSearch && (h.device_type === 'Mobile Device' || (h.vendor && /samsung|apple|xiaomi|huawei|pixel|oneplus/i.test(h.vendor)));
+    if (filterType === 'pc') return matchesSearch && (h.device_type === 'Workstation / PC');
+    if (filterType === 'iot') return matchesSearch && (h.device_type === 'IoT / Embedded');
+    return matchesSearch;
+  });
 
   return (
     <div>
       <div className="card">
         <div className="card-title">
           <Network size={18} color="#38bdf8" />
-          LAN Host Discovery & Topology Scan
+          Active Subnet Discovery & Network Topology
         </div>
         <div className="card-desc">
-          High-concurrency ARP & ICMP subnet sweep with MAC vendor resolution (OUI) and device role identification.
+          Discovers online network hosts via non-blocking ARP sweeps, ICMP echoes, reverse hostname resolution, and IEEE MAC OUI manufacturer identification.
         </div>
 
         <form onSubmit={fetchLan}>
           <div className="form-row">
             <div style={{ flex: '1 1 240px' }}>
-              <label style={{ fontSize: 11, color: '#94a3b8', display: 'block', marginBottom: 4 }}>Target Subnet CIDR</label>
+              <label style={{ fontSize: 11, color: '#94a3b8', display: 'block', marginBottom: 4 }}>Target Subnet CIDR (Leave blank for auto-detected LAN)</label>
               <input
                 className="input mono"
                 style={{ width: '100%' }}
@@ -96,68 +105,138 @@ export default function LanDiscoveryView() {
         )}
       </div>
 
-      {data && (
+      {lanData && (
         <div>
-          <div className="metrics-row">
+          {/* Interactive Topology Graph */}
+          <TopologyMap hosts={hosts} />
+
+          <div className="metrics-row" style={{ marginTop: 16 }}>
             <div className="metric-box">
-              <div className="metric-label">Online Hosts</div>
-              <div className="metric-val" style={{ color: '#38bdf8' }}>{data.online_count}</div>
+              <div className="metric-label">Online Devices</div>
+              <div className="metric-val" style={{ color: '#38bdf8' }}>{lanData.total_hosts_found}</div>
             </div>
-            <div className="metric-box">
-              <div className="metric-label">Probed IPs</div>
-              <div className="metric-val">{data.total_probed}</div>
-            </div>
+
             <div className="metric-box">
               <div className="metric-label">Local Host IP</div>
-              <div className="metric-val mono" style={{ fontSize: 16 }}>{data.local_ip}</div>
+              <div
+                className="metric-val mono"
+                style={{ fontSize: 15, cursor: 'pointer' }}
+                onClick={() => copyToClipboard(lanData.local_ip, 'Local IP')}
+                title="Click to copy"
+              >
+                {lanData.local_ip}
+              </div>
             </div>
+
             <div className="metric-box">
-              <div className="metric-label">Audited Subnet</div>
-              <div className="metric-val mono" style={{ fontSize: 16 }}>{data.scanned_subnet}</div>
+              <div className="metric-label">Scanned Subnet</div>
+              <div className="metric-val mono" style={{ fontSize: 15 }}>{lanData.subnet}</div>
+            </div>
+
+            <div className="metric-box">
+              <div className="metric-label">Scan Duration</div>
+              <div className="metric-val mono">{lanData.duration_seconds}s</div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600 }}>DISCOVERED NETWORK NODES</span>
-            {data.hosts.length > 0 && (
-              <button className="btn btn-secondary" onClick={exportCSV} style={{ padding: '4px 10px', fontSize: 11 }}>
-                <Download size={12} /> Export CSV
-              </button>
-            )}
+          {/* Quick Filter Chips & Search Bar */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, gap: 10, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {[
+                { id: 'all', label: `All (${hosts.length})` },
+                { id: 'gateway', label: 'Gateways' },
+                { id: 'mobile', label: 'Mobiles' },
+                { id: 'pc', label: 'PCs' },
+                { id: 'iot', label: 'IoT' }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  className={`btn ${filterType === tab.id ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ padding: '4px 10px', fontSize: 12 }}
+                  onClick={() => setFilterType(tab.id)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ position: 'relative', width: 220 }}>
+              <input
+                className="input"
+                style={{ width: '100%', paddingLeft: 28, fontSize: 12 }}
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search IP, MAC, Vendor..."
+              />
+              <Search size={13} color="#64748b" style={{ position: 'absolute', left: 8, top: 9 }} />
+            </div>
           </div>
 
+          {/* Devices Table */}
           <div className="data-table-container">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Node IP</th>
-                  <th>Hostname / Name</th>
+                  <th>IP Address</th>
+                  <th>Hostname</th>
                   <th>MAC Address</th>
                   <th>Hardware Vendor</th>
-                  <th>Device Role</th>
+                  <th>Device Classification</th>
                   <th>Latency</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {data.hosts.map((h) => (
-                  <tr key={h.ip} style={h.is_self ? { backgroundColor: 'rgba(56, 189, 248, 0.05)' } : {}}>
-                    <td className="mono" style={{ fontWeight: 600, color: h.is_gateway ? '#fbbf24' : (h.is_self ? '#38bdf8' : '#f1f5f9') }}>
-                      {h.ip}
+                {filteredHosts.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} style={{ textAlign: 'center', padding: 24, color: '#64748b' }}>
+                      No devices match the active filter criteria.
                     </td>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        {h.is_gateway ? <Router size={14} color="#fbbf24" /> : (h.is_self ? <Laptop size={14} color="#38bdf8" /> : <Server size={14} color="#94a3b8" />)}
-                        <span>{h.hostname}</span>
-                        {h.is_gateway && <span className="badge badge-warning" style={{ fontSize: 10 }}>GATEWAY</span>}
-                        {h.is_self && <span className="badge badge-neutral" style={{ fontSize: 10 }}>THIS DEVICE</span>}
-                      </div>
-                    </td>
-                    <td className="mono" style={{ fontSize: 12 }}>{h.mac}</td>
-                    <td style={{ color: '#cbd5e1' }}>{h.vendor}</td>
-                    <td><span className="badge badge-neutral">{h.device_type}</span></td>
-                    <td className="mono">{h.latency_ms} ms</td>
                   </tr>
-                ))}
+                ) : (
+                  filteredHosts.map((h) => (
+                    <tr key={h.ip}>
+                      <td className="mono" style={{ fontWeight: 600, color: '#f1f5f9' }}>
+                        {h.ip}
+                        {h.is_self && <span className="badge badge-neutral" style={{ marginLeft: 6 }}>This Machine</span>}
+                        {h.is_gateway && <span className="badge badge-warning" style={{ marginLeft: 6 }}>Gateway</span>}
+                      </td>
+                      <td style={{ color: h.hostname ? '#cbd5e1' : '#64748b' }}>
+                        {h.hostname || 'Unresolved'}
+                      </td>
+                      <td className="mono" style={{ fontSize: 12 }}>
+                        {h.mac}
+                      </td>
+                      <td>
+                        <span style={{ fontWeight: 500 }}>{h.vendor || 'Generic Device'}</span>
+                      </td>
+                      <td>
+                        <span className="badge badge-neutral">{h.device_type || 'Endpoint'}</span>
+                      </td>
+                      <td className="mono">{h.latency_ms} ms</td>
+                      <td>
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          <button
+                            className="btn btn-secondary"
+                            style={{ padding: '2px 6px', fontSize: 11 }}
+                            onClick={() => copyToClipboard(h.ip, 'IP')}
+                            title="Copy IP"
+                          >
+                            <Copy size={11} /> IP
+                          </button>
+                          <button
+                            className="btn btn-secondary"
+                            style={{ padding: '2px 6px', fontSize: 11 }}
+                            onClick={() => copyToClipboard(h.mac, 'MAC')}
+                            title="Copy MAC"
+                          >
+                            <Copy size={11} /> MAC
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

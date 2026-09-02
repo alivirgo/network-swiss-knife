@@ -1,28 +1,42 @@
 import React, { useState } from 'react';
-import { ShieldAlert, Search, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
+import { ShieldAlert, Search, CheckCircle, AlertTriangle, XCircle, Copy, Globe } from 'lucide-react';
 import ProgressBar from '../components/ProgressBar';
+import { useToast } from '../components/Toast';
 
 export default function MaliciousDnsView() {
   const [domain, setDomain] = useState('example.com');
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null);
+  const [results, setResults] = useState(null);
   const [error, setError] = useState('');
 
+  const addToast = useToast();
+
   const checkDomain = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     setLoading(true);
     setError('');
-    setResult(null);
+    setResults(null);
 
     try {
       const res = await fetch(`/api/dns/malicious-check?domain=${encodeURIComponent(domain)}`);
       const data = await res.json();
-      setResult(data);
+      setResults(data);
+      if (data.is_malicious) {
+        addToast(`Warning: Domain flagged as malicious by threat intelligence filters!`, 'error');
+      } else {
+        addToast(`Domain check complete: ${data.verdict}`);
+      }
     } catch (err) {
       setError(err.message);
+      addToast(err.message, 'error');
     } finally {
       setLoading(false);
     }
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    addToast('Copied to clipboard');
   };
 
   return (
@@ -30,10 +44,10 @@ export default function MaliciousDnsView() {
       <div className="card">
         <div className="card-title">
           <ShieldAlert size={18} color="#38bdf8" />
-          Malicious DNS & Threat Sinkhole Check
+          Malicious DNS & Threat Intelligence Sinkhole Check
         </div>
         <div className="card-desc">
-          Audits domains across threat-blocking DNS filters (Quad9, Cloudflare Security, CleanBrowsing) to identify malware, phishing, and sinkholed C2 domains.
+          Audits domains across threat-blocking DNS filters (Quad9, Cloudflare Security, CleanBrowsing, AdGuard) with DGA, typosquatting, and subdomain reconnaissance.
         </div>
 
         <form onSubmit={checkDomain}>
@@ -68,69 +82,93 @@ export default function MaliciousDnsView() {
         )}
       </div>
 
-      {result && (
+      {results && (
         <div>
           <div className="metrics-row">
             <div className="metric-box">
-              <div className="metric-label">Verdict</div>
+              <div className="metric-label">Security Verdict</div>
               <div className="metric-val">
-                <span className={`badge ${result.is_malicious ? 'badge-danger' : (result.risk_score_pct > 30 ? 'badge-warning' : 'badge-success')}`} style={{ fontSize: 13, padding: '4px 8px' }}>
-                  {result.verdict}
+                <span className={`badge ${results.is_malicious ? 'badge-danger' : (results.risk_score_pct > 30 ? 'badge-warning' : 'badge-success')}`} style={{ fontSize: 14 }}>
+                  {results.verdict}
                 </span>
               </div>
             </div>
+
             <div className="metric-box">
               <div className="metric-label">Threat Risk Score</div>
-              <div className="metric-val mono" style={{ color: result.risk_score_pct > 50 ? '#ef4444' : (result.risk_score_pct > 20 ? '#f59e0b' : '#10b981') }}>
-                {result.risk_score_pct} / 100
+              <div className="metric-val mono" style={{ color: results.risk_score_pct > 50 ? '#ef4444' : (results.risk_score_pct > 20 ? '#fbbf24' : '#10b981') }}>
+                {results.risk_score_pct} / 100
               </div>
             </div>
+
             <div className="metric-box">
-              <div className="metric-label">Security Blocks</div>
-              <div className="metric-val mono">
-                {result.blocked_resolvers_count} / {result.total_security_resolvers}
-              </div>
-            </div>
-            <div className="metric-box">
-              <div className="metric-label">Inspected Host</div>
-              <div className="metric-val mono" style={{ fontSize: 15 }}>{result.domain}</div>
+              <div className="metric-label">Security Filters Triggered</div>
+              <div className="metric-val mono">{results.blocked_resolvers_count} / {results.total_security_resolvers}</div>
             </div>
           </div>
 
-          <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600, marginBottom: 8 }}>SECURITY RESOLVER VERDICTS</div>
+          {results.threat_indicators && results.threat_indicators.length > 0 && (
+            <div className="card" style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#fbbf24', marginBottom: 6 }}>
+                IDENTIFIED THREAT INDICATORS:
+              </div>
+              <ul style={{ paddingLeft: 18, fontSize: 12, color: '#cbd5e1', lineHeight: 1.6 }}>
+                {results.threat_indicators.map((ind, i) => (
+                  <li key={i}>{ind}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Subdomain Discovery Preview */}
+          {results.discovered_subdomains && results.discovered_subdomains.length > 0 && (
+            <div className="card" style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Globe size={15} color="#38bdf8" />
+                Discovered Active Subdomains ({results.discovered_subdomains.length})
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {results.discovered_subdomains.map((s, idx) => (
+                  <span key={idx} className="mono" style={{ backgroundColor: '#070a12', padding: '4px 8px', borderRadius: 4, fontSize: 12, border: '1px solid #1e293b' }}>
+                    <strong style={{ color: '#38bdf8' }}>{s.prefix}</strong>.{results.domain} &rarr; <span style={{ color: '#94a3b8' }}>{s.ips.join(', ')}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Resolver Comparison Table */}
           <div className="data-table-container">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Resolver</th>
+                  <th>Security Resolver</th>
                   <th>Resolver IP</th>
-                  <th>Filtering Mode</th>
-                  <th>Resolved IP</th>
-                  <th>Evaluation</th>
+                  <th>Classification</th>
+                  <th>Resolved IP Address(es)</th>
+                  <th>Status</th>
                 </tr>
               </thead>
               <tbody>
-                {result.resolver_details.map((r) => (
-                  <tr key={r.resolver}>
-                    <td style={{ fontWeight: 500, color: '#f1f5f9' }}>{r.resolver}</td>
-                    <td className="mono">{r.ip}</td>
+                {results.resolver_details.map((res, idx) => (
+                  <tr key={idx}>
+                    <td style={{ fontWeight: 600 }}>{res.resolver}</td>
+                    <td className="mono">{res.ip}</td>
                     <td>
-                      <span className={`badge ${r.blocks_threats_mode ? 'badge-neutral' : 'badge-neutral'}`}>
-                        {r.blocks_threats_mode ? 'Threat Blocklist Active' : 'Unfiltered Control'}
+                      <span className={`badge ${res.blocks_threats_mode ? 'badge-warning' : 'badge-neutral'}`}>
+                        {res.blocks_threats_mode ? 'Threat Filter' : 'Control'}
                       </span>
                     </td>
-                    <td className="mono" style={{ fontSize: 12 }}>
-                      {r.ips && r.ips.length > 0 ? r.ips.join(', ') : <span style={{ color: '#ef4444' }}>NXDOMAIN / Refused</span>}
+                    <td className="mono" style={{ color: res.is_sinkhole ? '#ef4444' : '#f1f5f9' }}>
+                      {res.is_sinkhole ? 'SINKHOLE (Blocked)' : (res.ips.join(', ') || 'NXDOMAIN (Blocked)')}
                     </td>
                     <td>
-                      {r.is_sinkhole ? (
-                        <span className="badge badge-danger">
-                          <AlertTriangle size={12} /> SINKHOLED / BLOCKED
-                        </span>
+                      {res.is_sinkhole ? (
+                        <span className="badge badge-danger">BLOCKED</span>
+                      ) : res.resolved ? (
+                        <span className="badge badge-success">CLEAN / PASSED</span>
                       ) : (
-                        <span className="badge badge-success">
-                          <CheckCircle size={12} /> ALLOWED
-                        </span>
+                        <span className="badge badge-warning">BLOCKED / NX</span>
                       )}
                     </td>
                   </tr>

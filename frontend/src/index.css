@@ -416,3 +416,15 @@ code, pre, .mono {
   animation: indeterminateProgress 1.6s cubic-bezier(0.65, 0.815, 0.735, 0.395) infinite;
 }
 
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+

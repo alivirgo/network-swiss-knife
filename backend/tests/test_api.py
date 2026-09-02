@@ -46,3 +46,29 @@ def test_api_vpn_inspect_target():
     assert "confidence_pct" in data
     assert "detected_profile" in data
 
+def test_api_vlsm():
+    req = {
+        "root_cidr": "192.168.0.0/24",
+        "requirements": [
+            {"name": "Engineering", "hosts": 50},
+            {"name": "Sales", "hosts": 20}
+        ]
+    }
+    response = client.post("/api/subnet/vlsm", json=req)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["valid"] is True
+    assert len(data["allocated_subnets"]) == 2
+
+def test_api_packet_templates():
+    response = client.get("/api/packet/templates")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) >= 5
+
+def test_api_wifi():
+    response = client.get("/api/wifi/status")
+    assert response.status_code == 200
+    assert "connected" in response.json()
+
+

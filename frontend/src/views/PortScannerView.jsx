@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Play, Shield, AlertTriangle, CheckCircle, Download } from 'lucide-react';
+import ProgressBar from '../components/ProgressBar';
 
 export default function PortScannerView() {
   const [target, setTarget] = useState('127.0.0.1');
@@ -164,6 +165,8 @@ export default function PortScannerView() {
             </div>
           </div>
         </form>
+
+        <ProgressBar loading={scanning} label={`Scanning ports on ${target} (${preset})...`} />
 
         {error && (
           <div style={{ padding: '8px 12px', background: 'rgba(239, 68, 68, 0.1)', color: '#f87171', borderRadius: 4, fontSize: 12, marginTop: 10 }}>

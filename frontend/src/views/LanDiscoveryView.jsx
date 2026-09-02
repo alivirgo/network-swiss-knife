@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Network, RefreshCw, Server, Laptop, Router, Download } from 'lucide-react';
+import ProgressBar from '../components/ProgressBar';
 
 export default function LanDiscoveryView() {
   const [loading, setLoading] = useState(false);
@@ -85,6 +86,8 @@ export default function LanDiscoveryView() {
             </div>
           </div>
         </form>
+
+        <ProgressBar loading={loading} label={`Scanning LAN hosts on ${cidr || 'local subnet'}...`} />
 
         {error && (
           <div style={{ padding: '8px 12px', background: 'rgba(239, 68, 68, 0.1)', color: '#f87171', borderRadius: 4, fontSize: 12, marginTop: 10 }}>

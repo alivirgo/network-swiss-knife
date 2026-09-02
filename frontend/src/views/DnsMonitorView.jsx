@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Globe, RefreshCw, Zap } from 'lucide-react';
+import ProgressBar from '../components/ProgressBar';
 
 export default function DnsMonitorView() {
   const [servers, setServers] = useState([]);
@@ -39,6 +40,8 @@ export default function DnsMonitorView() {
             {loading ? 'Benchmarking Resolvers...' : 'Run Benchmark'}
           </button>
         </div>
+
+        <ProgressBar loading={loading} label="Pinging global DNS resolvers (Cloudflare, Google, Quad9, OpenDNS)..." />
       </div>
 
       {servers.length > 0 && (

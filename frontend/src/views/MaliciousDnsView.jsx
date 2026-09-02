@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ShieldAlert, Search, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
+import ProgressBar from '../components/ProgressBar';
 
 export default function MaliciousDnsView() {
   const [domain, setDomain] = useState('example.com');
@@ -57,6 +58,8 @@ export default function MaliciousDnsView() {
             </div>
           </div>
         </form>
+
+        <ProgressBar loading={loading} label={`Querying threat-blocking security resolvers for ${domain}...`} />
 
         {error && (
           <div style={{ padding: '8px 12px', background: 'rgba(239, 68, 68, 0.1)', color: '#f87171', borderRadius: 4, fontSize: 12, marginTop: 10 }}>

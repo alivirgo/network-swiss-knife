@@ -37,3 +37,12 @@ def test_api_interfaces():
     response = client.get("/api/tools/interfaces")
     assert response.status_code == 200
     assert "interfaces" in response.json()
+
+def test_api_vpn_inspect_target():
+    response = client.get("/api/vpn/inspect-target?ip=127.0.0.1")
+    assert response.status_code == 200
+    data = response.json()
+    assert "is_vpn_active" in data
+    assert "confidence_pct" in data
+    assert "detected_profile" in data
+

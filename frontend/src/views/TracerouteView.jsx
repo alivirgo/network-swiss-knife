@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Navigation, Play } from 'lucide-react';
+import ProgressBar from '../components/ProgressBar';
 
 export default function TracerouteView() {
   const [target, setTarget] = useState('1.1.1.1');
@@ -75,6 +76,8 @@ export default function TracerouteView() {
             </div>
           </div>
         </form>
+
+        <ProgressBar loading={loading} label={`Tracing network hops to ${target} (up to ${maxHops} hops)...`} />
 
         {error && (
           <div style={{ padding: '8px 12px', background: 'rgba(239, 68, 68, 0.1)', color: '#f87171', borderRadius: 4, fontSize: 12, marginTop: 10 }}>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Lock, Shield, CheckCircle, AlertTriangle, XCircle, Search } from 'lucide-react';
+import ProgressBar from '../components/ProgressBar';
 
 export default function SslSecurityView() {
   const [target, setTarget] = useState('google.com');
@@ -62,6 +63,8 @@ export default function SslSecurityView() {
             </div>
           </div>
         </form>
+
+        <ProgressBar loading={loading} label={`Performing TLS handshake and HTTP header audit on ${target}...`} />
 
         {error && (
           <div style={{ padding: '8px 12px', background: 'rgba(239, 68, 68, 0.1)', color: '#f87171', borderRadius: 4, fontSize: 12, marginTop: 10 }}>

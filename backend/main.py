@@ -98,10 +98,16 @@ async def api_dns_propagation(domain: str, type: str = "A"):
 async def api_dns_malicious_check(domain: str):
     return await check_malicious_dns(domain)
 
+from core.vpn_detector import audit_network_for_vpn, check_local_vpn_interfaces, inspect_client_device_vpn
+
 # ----------------- VPN DETECTOR -----------------
 @app.get("/api/vpn/audit")
 async def api_vpn_audit(cidr: Optional[str] = None):
     return await audit_network_for_vpn(cidr=cidr)
+
+@app.get("/api/vpn/inspect-target")
+async def api_vpn_inspect_target(ip: str):
+    return await inspect_client_device_vpn(ip=ip)
 
 @app.get("/api/vpn/local-adapters")
 def api_vpn_local_adapters():

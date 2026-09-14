@@ -1,3 +1,5 @@
+[![Hits](https://hits.sh/github.com/alivirgo/network-swiss-knife.svg)](https://hits.sh/github.com/alivirgo/network-swiss-knife/)
+
 # 🛠️ Network Swiss Knife (NSK) 2.0
 
 > **Turned from a 2020 single-threaded script into an enterprise-grade, cross-platform networking powerhouse.**
